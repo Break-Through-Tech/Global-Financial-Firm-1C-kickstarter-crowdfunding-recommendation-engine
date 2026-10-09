@@ -1,16 +1,16 @@
 # Data
 
-* **Source:** [Kaggle: Kickstarter Dataset](https://www.kaggle.com/datasets/parienza/kickstarter)
-* **Format:** CSV
-* **Size:** Approximately 45,957 observations and 17 columns
-* **Storage:** Raw dataset stored in Google Drive for shared team access
-* **Purpose:** Used to analyze and predict Kickstarter campaign success or failure.
+- **Source:** [Kaggle: Kickstarter Dataset](https://www.kaggle.com/datasets/parienza/kickstarter)
+- **Format:** CSV
+- **Size:** Approximately 45,957 observations and 17 columns
+- **Shared storage:** Google Drive
+- **Purpose:** Used to analyze and predict Kickstarter campaign success or failure.
 
-## Data Validation
+## Data Access
 
-**SHA-256:** `b788f3c4527c8203bd237367b2c142046f5dbf9bd48fe5d84ca9478126ab8c52`
+The project's primary notebook workflow loads the raw dataset directly from the team's shared Google Drive using the utilities in `utils/`.
 
-To verify the dataset locally:
+A local copy of the raw CSV can also be downloaded to:
 
-```bash
-shasum -a 256 data/Raw-data/DSI_kickstarterscrape_dataset.csv
+```text
+data/Raw-data/DSI_kickstarterscrape_dataset.csv
