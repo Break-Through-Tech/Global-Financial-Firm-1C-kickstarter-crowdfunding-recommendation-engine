@@ -1,63 +1,95 @@
 import io
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
-from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
-from utils.google_drive_client import get_drive_client
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.google_drive_client import get_raw_drive_client
+
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 
-def get_datafile(service):
-    folder_id = os.environ["GOOGLE_DRIVE_DATA_FOLDER_ID"]
-    file_name = os.environ["GOOGLE_DRIVE_DATA_FILE_NAME"]
+RAW_FOLDER_ID = os.getenv("GOOGLE_DRIVE_DATA_FOLDER_ID")
 
-    query = (
-        f"name = '{file_name}' "
-        f"and '{folder_id}' in parents "
-        "and trashed = false"
-    )
+RAW_FILE_NAME = os.getenv(
+    "GOOGLE_DRIVE_DATA_FILE_NAME",
+    "DSI_kickstarterscrape_dataset.csv",
+)
 
-    results = (
+
+def escape_drive_query(value):
+    return value.replace("\\", "\\\\").replace("'", "\\'")
+
+
+def get_drive_file_id(
+    service,
+    folder_id=None,
+    file_name=None,
+):
+    if folder_id is None:
+        folder_id = RAW_FOLDER_ID
+
+    if file_name is None:
+        file_name = RAW_FILE_NAME
+
+    if not folder_id:
+        raise RuntimeError(
+            "GOOGLE_DRIVE_DATA_FOLDER_ID is not set in .env"
+        )
+
+    safe_file_name = escape_drive_query(file_name)
+
+    result = (
         service.files()
         .list(
-            q=query,
-            pageSize=10,
-            fields="files(id, name, capabilities(canDownload))",
+            q=(
+                f"'{folder_id}' in parents "
+                f"and name = '{safe_file_name}' "
+                "and trashed = false"
+            ),
+            spaces="drive",
+            fields="files(id, name)",
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
         )
         .execute()
     )
 
-    files = results.get("files", [])
+    files = result.get("files", [])
 
     if not files:
         raise FileNotFoundError(
-            f"Could not find '{file_name}' in the configured Google Drive folder."
+            f"Could not find {file_name!r} "
+            "in the configured Google Drive Raw-data folder."
         )
 
-    return files[0]
-
-
-def _download_file_to_buffer(service):
-    data_file = get_datafile(service)
-
-    if not data_file["capabilities"]["canDownload"]:
-        raise PermissionError(
-            f"File cannot be downloaded: {data_file['name']}"
+    if len(files) > 1:
+        raise RuntimeError(
+            f"Multiple files named {file_name!r} "
+            "were found in the configured Raw-data folder."
         )
 
+    return files[0]["id"]
+
+
+def download_drive_file(service, file_id):
     request = service.files().get_media(
-        fileId=data_file["id"]
+        fileId=file_id,
+        supportsAllDrives=True,
     )
 
     buffer = io.BytesIO()
+
     downloader = MediaIoBaseDownload(
         buffer,
         request,
@@ -66,61 +98,115 @@ def _download_file_to_buffer(service):
     done = False
 
     while not done:
-        _, done = downloader.next_chunk()
+        status, done = downloader.next_chunk()
 
-    buffer.seek(0)
+        if status:
+            print(
+                f"Download progress: "
+                f"{int(status.progress() * 100)}%"
+            )
 
-    return buffer
+    return buffer.getvalue()
 
 
-def load_csv_from_drive(service):
-    buffer = _download_file_to_buffer(service)
+def load_csv_from_drive(
+    service=None,
+    folder_id=None,
+    file_name=None,
+):
+    """
+    Download and parse the raw CSV into a pandas DataFrame.
+    Used by existing notebooks.
+    """
+    if service is None:
+        service = get_raw_drive_client()
 
-    return pd.read_csv(
-        buffer,
+    if folder_id is None:
+        folder_id = RAW_FOLDER_ID
+
+    if file_name is None:
+        file_name = RAW_FILE_NAME
+
+    file_id = get_drive_file_id(
+        service,
+        folder_id,
+        file_name,
+    )
+
+    print(f"Found file: {file_name}")
+
+    file_bytes = download_drive_file(
+        service,
+        file_id,
+    )
+
+    df = pd.read_csv(
+        io.BytesIO(file_bytes),
         encoding="utf-8",
         encoding_errors="replace",
     )
 
+    return df
 
-def download_csv_data(service, local_path):
-    buffer = _download_file_to_buffer(service)
 
-    local_path = Path(local_path)
-    local_path.parent.mkdir(
+def download_raw_data(
+    service=None,
+    folder_id=None,
+    file_name=None,
+):
+    """
+    Download the original CSV bytes without modifying them.
+    Preserves the raw dataset's SHA-256 hash.
+    """
+    if service is None:
+        service = get_raw_drive_client()
+
+    if folder_id is None:
+        folder_id = RAW_FOLDER_ID
+
+    if file_name is None:
+        file_name = RAW_FILE_NAME
+
+    file_id = get_drive_file_id(
+        service,
+        folder_id,
+        file_name,
+    )
+
+    print(f"Found file: {file_name}")
+
+    file_bytes = download_drive_file(
+        service,
+        file_id,
+    )
+
+    raw_data_dir = (
+        PROJECT_ROOT
+        / "data"
+        / "Raw-data"
+    )
+
+    raw_data_dir.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    with open(local_path, "wb") as file:
-        file.write(buffer.getvalue())
+    output_path = raw_data_dir / file_name
+
+    output_path.write_bytes(file_bytes)
+
+    print(f"Downloaded file to: {output_path}")
+
+    return output_path
 
 
-def load_csv_data(local_path):
-    return pd.read_csv(
-        local_path,
-        encoding="utf-8",
-        encoding_errors="replace",
+def main():
+    service = get_raw_drive_client()
+
+    download_raw_data(
+        service=service,
     )
 
 
 if __name__ == "__main__":
-    try:
-        service = get_drive_client()
-
-        local_path = (
-            PROJECT_ROOT
-            / "data"
-            / "Raw-data"
-            / "DSI_kickstarterscrape_dataset.csv"
-        )
-
-        download_csv_data(
-            service,
-            local_path,
-        )
-
-        print(f"Downloaded file to: {local_path}")
-
-    except HttpError as error:
-        print(f"An error occurred: {error}")
+    main()
