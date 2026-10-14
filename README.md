@@ -4,6 +4,12 @@ Project overview here
 
 ---
 
+### 🔍 Pre-tuning validation
+
+Before hyperparameter tuning, review [prediction-time feature assumptions and validation checks](docs/model_validation.md). Run the [training-only audit notebook](notebooks/05b_pre_tuning_validation.ipynb) and its accompanying tests; final test-set evaluation remains reserved for the evaluation milestone.
+
+---
+
 ### 👥 **Team Members**
 
 > Note: Contributions TBD
