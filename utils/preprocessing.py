@@ -32,26 +32,36 @@ CATEGORICAL = ["category", "subcategory", "state"]
 class FeatureBuilder(BaseEstimator, TransformerMixin):
     "Raw columns in, engineered features plus the categoricals out."
 
-    def __init__(self, include_timing=True, include_flags=True, exclude_renamed=False):
+    def __init__(self, include_timing=True, include_flags=True,
+                 exclude_renamed=False, include_reward=True):
         self.include_timing = include_timing
         self.include_flags = include_flags
         self.exclude_renamed = exclude_renamed
+        self.include_reward = include_reward
 
     def fit(self, X, y=None):
         # learn the goal medians here so test rows are measured against the training norm
-        base = add_base_columns(X)
+        base = add_base_columns(X, parse_dates=self.include_timing)
         _, self.subcat_median_, self.cat_median_ = ask_features(base)
         return self
 
     def transform(self, X):
-        base = add_base_columns(X)
+        base = add_base_columns(X, parse_dates=self.include_timing)
         ask, _, _ = ask_features(base, self.subcat_median_, self.cat_median_)
 
-        blocks = [ask, reward_features(base)]
+        blocks = [ask]
+        if self.include_reward:
+            blocks.append(reward_features(base))
+        else:
+            # ask_features also contains these two reward-derived columns.
+            blocks[0] = ask.drop(columns=["goal_per_tier", "backers_needed"])
         if self.include_flags:
             blocks.append(effort_flags(base))
         if self.include_timing:
             blocks.append(timing_features(base))
+        else:
+            # Keep duration even when unverified date-derived features are off.
+            blocks.append(base[["duration"]].copy())
 
         out = pd.concat(blocks, axis=1)
         out = out.loc[:, ~out.columns.duplicated()]

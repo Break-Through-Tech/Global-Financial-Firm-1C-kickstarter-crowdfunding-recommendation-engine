@@ -122,3 +122,11 @@ Cite relevant papers, articles, or resources that supported your project.
 ## 🙏 **Acknowledgements** (Optional but encouraged)
 
 Thank your Challenge Advisor, host company representatives, TA, and others who supported your project.
+
+
+## U.S. candidate cohort (separate experiment)
+
+The global notebooks remain in `notebooks/`. A non-destructive U.S. state-code
+proxy workflow is in `notebooks/us_only/01-05`; see
+[`docs/us_only_workflow.md`](docs/us_only_workflow.md) for scope caveats,
+prerequisites, run order and the shared `06` handoff.
