@@ -32,9 +32,10 @@ CATEGORICAL = ["category", "subcategory", "state"]
 class FeatureBuilder(BaseEstimator, TransformerMixin):
     "Raw columns in, engineered features plus the categoricals out."
 
-    def __init__(self, include_timing=True, include_flags=True):
+    def __init__(self, include_timing=True, include_flags=True, exclude_renamed=False):
         self.include_timing = include_timing
         self.include_flags = include_flags
+        self.exclude_renamed = exclude_renamed
 
     def fit(self, X, y=None):
         # learn the goal medians here so test rows are measured against the training norm
@@ -54,15 +55,19 @@ class FeatureBuilder(BaseEstimator, TransformerMixin):
 
         out = pd.concat(blocks, axis=1)
         out = out.loc[:, ~out.columns.duplicated()]
+        if self.exclude_renamed:
+            out = out.drop(columns=["renamed"], errors="ignore")
         for c in CATEGORICAL:
             out[c] = base[c].astype("object")
         return out
 
 
 class TargetEncoder(BaseEstimator, TransformerMixin):
-    """Replace a category with its smoothed success rate.
+    """Smoothed category success rates with training-only cross-fitting.
 
-    Training values are computed out of fold so a row never sees its own label.
+    fit_transform returns out-of-fold encodings during model training.
+    transform ALWAYS uses the full fitted mapping for arbitrary prediction rows.
+    In particular, index equality is not a valid test of row identity.
     """
 
     def __init__(self, cols=None, smoothing=50, n_splits=5, random_state=42):
@@ -71,41 +76,67 @@ class TargetEncoder(BaseEstimator, TransformerMixin):
         self.n_splits = n_splits
         self.random_state = random_state
 
-    def _mapping(self, keys, y):
-        g = pd.DataFrame({"k": keys.values, "y": np.asarray(y, dtype=float)}).groupby("k")["y"]
-        m, n = g.mean(), g.size()
-        return (m * n + self.prior_ * self.smoothing) / (n + self.smoothing)
+    @staticmethod
+    def _mapping(keys, y, smoothing, prior):
+        grouped = pd.DataFrame({
+            "key": pd.Series(keys).astype(str).to_numpy(),
+            "y": np.asarray(y, dtype=float),
+        }).groupby("key")["y"]
+        means, counts = grouped.mean(), grouped.size()
+        return (means * counts + prior * smoothing) / (counts + smoothing)
 
     def fit(self, X, y):
-        self.cols_ = self.cols if self.cols is not None else list(X.columns)
-        y = pd.Series(np.asarray(y, dtype=float), index=X.index)
-        self.prior_ = y.mean()
-        self.maps_ = {c: self._mapping(X[c].astype(str), y) for c in self.cols_}
+        self.cols_ = list(self.cols) if self.cols is not None else list(X.columns)
+        targets = np.asarray(y, dtype=float).reshape(-1)
+        if len(targets) != len(X):
+            raise ValueError("X and y must have the same number of rows")
+        if len(targets) == 0 or not np.isfinite(targets).all():
+            raise ValueError("y must contain finite values")
+        if self.smoothing < 0:
+            raise ValueError("smoothing must be nonnegative")
+        if not set(self.cols_).issubset(X.columns):
+            raise ValueError("X is missing target-encoding columns")
 
-        kf = KFold(self.n_splits, shuffle=True, random_state=self.random_state)
-        oof = pd.DataFrame(index=X.index, columns=self.cols_, dtype=float)
-        for fit_idx, val_idx in kf.split(X):
-            fold_y = y.iloc[fit_idx]
-            for c in self.cols_:
-                m = self._mapping(X[c].astype(str).iloc[fit_idx], fold_y)
-                oof.iloc[val_idx, oof.columns.get_loc(c)] = (
-                    X[c].astype(str).iloc[val_idx].map(m).fillna(self.prior_).values
-                )
-        self.oof_ = oof
+        self.prior_ = float(targets.mean())
+        self.maps_ = {
+            c: self._mapping(X[c], targets, self.smoothing, self.prior_)
+            for c in self.cols_
+        }
         self.feature_names_out_ = [f"te_{c}" for c in self.cols_]
         return self
 
+    def fit_transform(self, X, y, **fit_params):
+        # ColumnTransformer/Pipeline call fit_transform on training folds.
+        # Build full-data mappings for future predictions, then return strictly
+        # out-of-fold encodings to the training model.
+        self.fit(X, y)
+        if not 2 <= self.n_splits <= len(X):
+            raise ValueError("n_splits must be between 2 and the number of training rows")
+
+        targets = np.asarray(y, dtype=float).reshape(-1)
+        keys = {c: X[c].astype(str) for c in self.cols_}
+        oof = np.empty((len(X), len(self.cols_)), dtype=float)
+        splitter = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
+        for fit_idx, val_idx in splitter.split(X):
+            fold_prior = float(targets[fit_idx].mean())
+            for j, c in enumerate(self.cols_):
+                mapping = self._mapping(
+                    keys[c].iloc[fit_idx], targets[fit_idx], self.smoothing, fold_prior
+                )
+                oof[val_idx, j] = (
+                    keys[c].iloc[val_idx].map(mapping).fillna(fold_prior).to_numpy()
+                )
+        return oof
+
     def transform(self, X):
-        # same rows as fit means we are in training, so hand back the out of fold values
-        if hasattr(self, "oof_") and X.index.equals(self.oof_.index):
-            out = self.oof_.copy()
-        else:
-            out = pd.DataFrame(
-                {c: X[c].astype(str).map(self.maps_[c]).fillna(self.prior_) for c in self.cols_},
-                index=X.index,
-            )
-        out.columns = self.feature_names_out_
-        return out.values
+        from sklearn.utils.validation import check_is_fitted
+
+        check_is_fitted(self, ["maps_", "prior_"])
+        # Never return cached training rows based on their DataFrame index.
+        return np.column_stack([
+            X[c].astype(str).map(self.maps_[c]).fillna(self.prior_).to_numpy()
+            for c in self.cols_
+        ])
 
     def get_feature_names_out(self, input_features=None):
         return np.asarray(self.feature_names_out_)
