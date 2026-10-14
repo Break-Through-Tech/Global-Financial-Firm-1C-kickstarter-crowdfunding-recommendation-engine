@@ -1,132 +1,95 @@
-# AI Studio Challenge Project Title
+# Kickstarter Crowdfunding Recommendation Engine — Team 1C
 
-Project overview here
+**Break Through Tech AI Studio · Fall 2026 · State Street challenge**
 
----
+We are developing a machine-learning workflow to predict whether a Kickstarter campaign is likely to succeed using information that could be available at or near launch. We also aim to turn model findings into responsible, understandable guidance for creators. **This project does not use State Street data.** See the [challenge brief](Challenge-Project-Overview.md).
 
-### 🔍 Pre-tuning validation
+**Current stage:** U.S.-candidate data exploration, conservative feature engineering, and baseline model comparisons are complete. Hyperparameter tuning, final held-out testing, interpretability, and the recommendation prototype are still in progress.
 
-Before hyperparameter tuning, review [prediction-time feature assumptions and validation checks](docs/model_validation.md). Run the [training-only audit notebook](notebooks/05b_pre_tuning_validation.ipynb) and its accompanying tests; final test-set evaluation remains reserved for the evaluation milestone.
+## Current results — U.S. candidate cohort
 
----
+| Cohort | Campaigns |
+|---|---:|
+| Cleaned records across all campaign statuses | 45,815 |
+| Candidate U.S. records identified by location suffix | 42,175 |
+| Successful/failed U.S. modeling candidates | **38,420** |
+| Training campaigns | **26,945** |
+| Reserved test campaigns | **11,475** |
 
-### 👥 **Team Members**
+The U.S. subset is **provisional**. The dataset does not include a verified country column: the filter identifies locations ending with a U.S. state or DC abbreviation. It may omit legitimate U.S. records or include ambiguous matches. See [the scope and split documentation](docs/us_only_workflow.md). The U.S. subset preserves membership in the original global training/test partition.
 
-> Note: Contributions TBD
+### Baseline modeling: five-fold CV on training data only
 
-| Name             | GitHub Handle | Contribution                                                             |
-|------------------|---------------|--------------------------------------------------------------------------|
-| Anna Sehgal    | @annasehgal | Data collection, Data preprocessing, Data handling for missing values and outliers, feature engineering, overall project coordination, documentation for decisions, data validation, Categorization and normalization of variables             |
-| Zasha Benites   | @zm-michelle    | Feature engineering, exploratory data analysis (EDA), documentation, visualization and summary  |
+| Model | Mean ROC-AUC | Mean accuracy | Mean F1 |
+|---|---:|---:|---:|
+| HistGradientBoosting | **0.7235** | **0.6684** | **0.7156** |
+| Logistic Regression | 0.7199 | 0.6684 | 0.7111 |
+| Random Forest | 0.7117 | 0.6583 | 0.7036 |
+| KNN | 0.6990 | 0.6527 | 0.7069 |
+| Decision Tree | 0.6867 | 0.6491 | 0.6958 |
+| Dummy (majority) | 0.5000 | 0.5461 | 0.7065 |
 
----
+These are **cross-validation results**, not final test-set results. The majority-class dummy's F1 is relatively high because it predicts the positive class for every row; use the complete set of metrics to compare models.
 
-## 🎯 **Project Highlights**
+An additional **training-only feature experiment** found that four optional launch-time candidate features changed Logistic Regression ROC-AUC from **0.7199 to 0.7235**, while HistGradientBoosting changed from **0.7235 to 0.7232**. The differences are small and do not justify a claim of superiority. See [`05a_safe_feature_check.ipynb`](notebooks/us_only/05a_safe_feature_check.ipynb).
 
-**Example:**
+## Repository layout and study order
 
-- Developed a machine learning model using `[model type/technique]` to address `[challenge project task]`.
-- Achieved `[key metric or result]`, demonstrating `[value or impact]` for `[host company]`.
-- Generated actionable insights to inform business decisions at `[host company or stakeholders]`.
-- Implemented `[specific methodology]` to address industry constraints or expectations.
+| Location | Purpose |
+|---|---|
+| `notebooks/00_load_data.ipynb` through `05b_pre_tuning_validation.ipynb` | Original broad-cohort data processing, feature work, baseline modeling, and pre-tuning validation |
+| [`notebooks/us_only/01–05`](notebooks/us_only/) | Separate U.S.-candidate audit, cleaning, preprocessing, feature engineering, and baseline modeling |
+| [`notebooks/us_only/04b_us_eda.ipynb`](notebooks/us_only/04b_us_eda.ipynb) | Additional U.S.-specific EDA with uncertainty intervals |
+| [`notebooks/us_only/05a_safe_feature_check.ipynb`](notebooks/us_only/05a_safe_feature_check.ipynb) | Training-only feature comparison, without using held-out labels |
+| `utils/` | Reusable feature engineering, filtering, Google Drive, and preprocessing helpers |
+| `tests/` | Automated scope, feature, and target-encoding regression tests |
+| [`docs/`](docs/) | Feature-policy, data-scope, and methodological decisions |
 
----
+The **global notebooks remain separate and unchanged by the U.S.-only workflow**. Do not compare the global and U.S.-candidate results as if their feature sets or populations were identical.
 
-## 👩🏽‍💻 **Setup and Installation**
+## Reproduce the workflow
 
-**Provide step-by-step instructions so someone else can run your code and reproduce your results. Depending on your setup, include:**
+From the repository root:
 
-* How to clone the repository
-* How to install dependencies
-* How to set up the environment
-* How to access the dataset(s)
-* How to run the notebook or scripts
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+python3 -m unittest discover -s tests -v
+```
 
----
+To run notebooks, install Jupyter if needed (`python3 -m pip install notebook`) and start it with `python3 -m notebook`.
 
-## 🏗️ **Project Overview**
+**Data is not committed to GitHub.** Retrieve the Kaggle Kickstarter dataset or the team's shared processed files according to [`data/README.md`](data/README.md). The U.S.-only notebooks require the cleaned broad-cohort CSV and saved global train/test project-ID files. Follow [`docs/us_only_workflow.md`](docs/us_only_workflow.md) for prerequisites and run order; then run optional `04b` and `05a` as explained in [`docs/us_feature_extension.md`](docs/us_feature_extension.md).
 
-**Describe:**
+Our existing [GitHub Actions workflow](.github/workflows/python-app.yml) runs Python unit tests and critical lint checks on relevant pushes and pull requests. It **does not** execute notebooks or train models; those require the separately managed dataset.
 
-- How this project is connected to the Break Through Tech AI Program
-- Your AI Studio host company and the project objective and scope
-- The real-world significance of the problem and the potential impact of your work
+## Methodological safeguards and limitations
 
----
+- Candidate predictions are intended for **campaign launch**. The conservative U.S. baseline excludes unverified `funded date`-derived timing, title flags, `renamed`, and scraped reward-level features.
+- Learned feature statistics and categorical encodings are fitted inside training folds during cross-validation. The original target encoder was separately reviewed and tested for training/inference index collisions; see [`docs/model_validation.md`](docs/model_validation.md).
+- The geographic proxy and historical availability of some fields still need source verification or Challenge Advisor review.
+- Feature associations are **not causal effects**. Recommendations must not imply that changing a funding goal, category, or reward automatically changes a campaign's outcome.
+- Final tuning and model selection must use training data only; the reserved U.S. test set is for final evaluation after selecting a configuration.
 
-## 📊 **Data Exploration**
+## Next steps
 
-**You might consider describing the following (as applicable):**
+1. Confirm the U.S. scope and prediction-time feature policy with the team and Challenge Advisor.
+2. Tune HistGradientBoosting and Logistic Regression (optionally Random Forest) and select the final model using training-only validation in `06`.
+3. Evaluate the selected model once on the reserved test set and document all required classification metrics.
+4. Complete interpretation/error analysis in `07`, then implement the recommendation prototype.
 
-* The dataset(s) used: origin, format, size, type of data
-* Data exploration and preprocessing approaches
-* Insights from your Exploratory Data Analysis (EDA)
-* Challenges and assumptions when working with the dataset(s)
+## Team
 
-**Potential visualizations to include:**
+| Contributor | GitHub | Work to date |
+|---|---|---|
+| Anna Sehgal | [@annasehgal](https://github.com/annasehgal) | Data handling, cleaning, preprocessing, validation, U.S. scope workflow, and project documentation |
+| Zasha Benites | [@zm-michelle](https://github.com/zm-michelle) | Feature engineering, EDA, visualization, and modeling collaboration |
 
-* Plots, charts, heatmaps, feature visualizations, sample dataset images
+## Data, license, and acknowledgements
 
----
+- **Source:** [Kaggle Kickstarter Projects dataset](https://www.kaggle.com/parienza/kickstarter). Original dataset and third-party materials have their own terms; no raw or processed data is distributed with this release.
+- **License:** See the repository's existing [custom `LICENSE`](LICENSE). Do not assume this is an MIT-licensed project.
+- **Acknowledgements:** Break Through Tech AI Studio, State Street challenge sponsors, Challenge Advisor, and team collaborators.
 
-## 🧠 **Model Development**
-
-**You might consider describing the following (as applicable):**
-
-* Model(s) used (e.g., CNN with transfer learning, regression models)
-* Feature selection and Hyperparameter tuning strategies
-* Training setup (e.g., % of data for training/validation, evaluation metric, baseline performance)
-
-
----
-
-## 📈 **Results & Key Findings**
-
-**You might consider describing the following (as applicable):**
-
-* Performance metrics (e.g., Accuracy, F1 score, RMSE)
-* How your model performed
-* Insights from evaluating model fairness
-
-**Potential visualizations to include:**
-
-* Confusion matrix, precision-recall curve, feature importance plot, prediction distribution, outputs from fairness or explainability tools
-
----
-
-## 🚀 **Next Steps**
-
-**You might consider addressing the following (as applicable):**
-
-* What are some of the limitations of your model?
-* What would you do differently with more time/resources?
-* What additional datasets or techniques would you explore?
-
----
-
-## 📝 **License**
-
-Specify how your project can be used by others. Choose an appropriate license and link it here (e.g., MIT, Apache 2.0). Make sure your Challenge Advisor approves of the selected license type. 
-
-**Example:**
-This project is licensed under the MIT License.
-
----
-
-## 📄 **References** (Optional but encouraged)
-
-Cite relevant papers, articles, or resources that supported your project.
-
----
-
-## 🙏 **Acknowledgements** (Optional but encouraged)
-
-Thank your Challenge Advisor, host company representatives, TA, and others who supported your project.
-
-
-## U.S. candidate cohort (separate experiment)
-
-The global notebooks remain in `notebooks/`. A non-destructive U.S. state-code
-proxy workflow is in `notebooks/us_only/01-05`; see
-[`docs/us_only_workflow.md`](docs/us_only_workflow.md) for scope caveats,
-prerequisites, run order and the shared `06` handoff.
+Release notes for the baseline milestone are in [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
