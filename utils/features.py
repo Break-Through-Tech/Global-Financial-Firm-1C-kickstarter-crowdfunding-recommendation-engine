@@ -62,12 +62,15 @@ def parse_tiers(s):
     return out
 
 
-def add_base_columns(df):
+def add_base_columns(df, parse_dates=True):
     "Parse the raw columns the other builders need."
     out = df.copy()
 
-    out["end"] = pd.to_datetime(out["funded date"], format="mixed", utc=True)
-    out["launch"] = out["end"] - pd.to_timedelta(out["duration"], unit="D")
+    # Deadline semantics are not verified for this dataset. Conservative
+    # launch-time models must not construct features from this field.
+    if parse_dates:
+        out["end"] = pd.to_datetime(out["funded date"], format="mixed", utc=True)
+        out["launch"] = out["end"] - pd.to_timedelta(out["duration"], unit="D")
 
     tiers = out["reward levels"].map(parse_tiers)
     out["tiers"] = tiers
