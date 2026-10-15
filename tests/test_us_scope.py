@@ -16,6 +16,14 @@ class USScopeTests(unittest.TestCase):
         self.assertEqual(int(summary.loc[0, "candidate_us_rows"]), 3)
         self.assertGreaterEqual(len(excluded), 2)
 
+    def test_full_states_territories_and_bare_codes_do_not_expand_proxy(self):
+        locations = ["St Croix, Virgin Islands, U.S.", "Cruz Bay, Virgin Islands, U.S.",
+                     "Virgin Islands of the United States", "Charlottesville, Virginia",
+                     "San Francisco, CA", "CA", "Toronto, ON", "Tbilisi, Georgia",
+                     "Kinshasa, Congo"]
+        self.assertEqual(us_state_proxy_mask(pd.DataFrame({"location": locations})).tolist(),
+                         [False, False, False, False, True, False, False, False, False])
+
     def test_preserves_global_split_and_targets(self):
         us = pd.DataFrame({"project id": [101, 102, 103, 104],
                            "status": ["successful", "failed", "live", "successful"]})

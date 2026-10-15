@@ -59,7 +59,7 @@ From the project root:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-reviewed.txt
 ```
 
 If the environment already exists:
@@ -390,3 +390,23 @@ data/Raw-data/
 ```
 
 is optional and is intended for offline access, verification, or debugging.
+
+## Current local training workflow (October 15)
+
+With the existing processed data and official splits restored, run U.S. 04,
+04b, 05 and optional 05a in that order. International 04/05 are secondary.
+Combined raw 01 and original 05 are historical raw-split experiments; do not
+rerun them as the current protocol. V2/V3 historical outputs predate the corrected
+encoder; V3 top-12 selection is exploratory. Preserve them.
+
+`utils/upload_processed_data.py` iterates only top-level processed files.
+It does not upload `us_only/` or `international_only/`. Restore those folders
+separately through the team, preserving names and official ID ordering; do not
+flatten them into a single folder or resplit data. No upload is part of remediation.
+
+U.S. membership is a state/DC geographic proxy, not verified registration country.
+Unknowns/territories are excluded; international explicit-name results have sparse
+groups and uncertain currency. Duration/funded-date/snapshot semantics remain
+unverified. Historical exposure prevents calling the reserved holdout completely
+untouched. See `docs/evaluation_decisions.md` before any final evaluation and
+`docs/environment_reproducibility.md` for compatible artifacts.

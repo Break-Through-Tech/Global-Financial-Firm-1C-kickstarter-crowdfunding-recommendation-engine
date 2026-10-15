@@ -22,3 +22,5 @@ data/*.zip
 data/**/*.csv
 data/**/*.zip
 data/Processed-Data/
+# Keep the original local workflow audit out of GitHub.
+/docs/workflow_audit_2026-10-15.md

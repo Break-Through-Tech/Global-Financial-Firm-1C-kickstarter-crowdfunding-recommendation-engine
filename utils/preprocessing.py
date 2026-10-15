@@ -39,22 +39,36 @@ class FeatureBuilder(BaseEstimator, TransformerMixin):
         self.exclude_renamed = exclude_renamed
         self.include_reward = include_reward
 
+    def _base(self, X):
+        required = ["goal", "duration", "category", "subcategory", "location"]
+        if self.include_reward:
+            required.append("reward levels")
+        if self.include_flags:
+            required.extend(["name", "url"])
+        if self.include_timing:
+            required.append("funded date")
+        missing = [c for c in required if c not in X.columns]
+        if missing:
+            raise ValueError(f"Missing required active feature columns: {missing}")
+        return add_base_columns(X, parse_dates=self.include_timing,
+                                parse_rewards=self.include_reward,
+                                parse_url=self.include_flags)
+
     def fit(self, X, y=None):
         # learn the goal medians here so test rows are measured against the training norm
-        base = add_base_columns(X, parse_dates=self.include_timing)
-        _, self.subcat_median_, self.cat_median_ = ask_features(base)
+        base = self._base(X)
+        _, self.subcat_median_, self.cat_median_ = ask_features(
+            base, include_reward=self.include_reward)
         return self
 
     def transform(self, X):
-        base = add_base_columns(X, parse_dates=self.include_timing)
-        ask, _, _ = ask_features(base, self.subcat_median_, self.cat_median_)
+        base = self._base(X)
+        ask, _, _ = ask_features(base, self.subcat_median_, self.cat_median_,
+                                 include_reward=self.include_reward)
 
         blocks = [ask]
         if self.include_reward:
             blocks.append(reward_features(base))
-        else:
-            # ask_features also contains these two reward-derived columns.
-            blocks[0] = ask.drop(columns=["goal_per_tier", "backers_needed"])
         if self.include_flags:
             blocks.append(effort_flags(base))
         if self.include_timing:

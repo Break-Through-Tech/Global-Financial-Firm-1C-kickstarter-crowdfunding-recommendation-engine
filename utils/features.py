@@ -62,7 +62,7 @@ def parse_tiers(s):
     return out
 
 
-def add_base_columns(df, parse_dates=True):
+def add_base_columns(df, parse_dates=True, parse_rewards=True, parse_url=True):
     "Parse the raw columns the other builders need."
     out = df.copy()
 
@@ -72,22 +72,24 @@ def add_base_columns(df, parse_dates=True):
         out["end"] = pd.to_datetime(out["funded date"], format="mixed", utc=True)
         out["launch"] = out["end"] - pd.to_timedelta(out["duration"], unit="D")
 
-    tiers = out["reward levels"].map(parse_tiers)
-    out["tiers"] = tiers
-    out["min_tier"] = tiers.map(lambda t: min(t) if t else np.nan)
-    out["max_tier"] = tiers.map(lambda t: max(t) if t else np.nan)
-    out["median_tier"] = tiers.map(lambda t: np.median(t) if t else np.nan)
-    out["n_tiers"] = tiers.map(len)
+    if parse_rewards:
+        tiers = out["reward levels"].map(parse_tiers)
+        out["tiers"] = tiers
+        out["min_tier"] = tiers.map(lambda t: min(t) if t else np.nan)
+        out["max_tier"] = tiers.map(lambda t: max(t) if t else np.nan)
+        out["median_tier"] = tiers.map(lambda t: np.median(t) if t else np.nan)
+        out["n_tiers"] = tiers.map(len)
 
-    parts = out["url"].astype(str).str.extract(r"projects/([^/]+)/([^/?#]+)")
-    out["creator"] = parts[0]
-    out["slug"] = parts[1]
+    if parse_url:
+        parts = out["url"].astype(str).str.extract(r"projects/([^/]+)/([^/?#]+)")
+        out["creator"] = parts[0]
+        out["slug"] = parts[1]
 
     out["state"] = out["location"].astype(str).str.extract(r",\s*([A-Z]{2})\s*$")[0]
     return out
 
 
-def ask_features(df, subcat_median=None, cat_median=None):
+def ask_features(df, subcat_median=None, cat_median=None, include_reward=True):
     "Size of the ask, absolute and relative to similar projects."
     f = pd.DataFrame(index=df.index)
     lg = np.log1p(df["goal"])
@@ -103,9 +105,11 @@ def ask_features(df, subcat_median=None, cat_median=None):
     f["goal_vs_subcat"] = lg - df["subcategory"].map(subcat_median).fillna(overall)
     f["goal_vs_cat"] = lg - df["category"].map(cat_median).fillna(overall)
 
-    f["goal_per_tier"] = lg - np.log1p(df["n_tiers"])
+    if include_reward:
+        f["goal_per_tier"] = lg - np.log1p(df["n_tiers"])
     f["goal_per_day"] = lg - np.log1p(df["duration"])
-    f["backers_needed"] = lg - np.log1p(df["median_tier"])
+    if include_reward:
+        f["backers_needed"] = lg - np.log1p(df["median_tier"])
     return f, subcat_median, cat_median
 
 

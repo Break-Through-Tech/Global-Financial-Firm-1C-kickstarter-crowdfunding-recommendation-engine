@@ -14,8 +14,9 @@ and interpretation work.
 The filter accepts locations ending in one of the 50 U.S. state codes or DC,
 for example `San Francisco, CA`. This is a transparent heuristic, not proof
 of country. It excludes unclear/missing locations and some U.S. territories.
-A country-code reference source or advisor sign-off is needed before calling
-this a confirmed U.S.-only cohort. All generated files are provisional.
+Parth Rana has confirmed U.S. primary scope. That confirmation does not verify
+registration country, historical snapshots, or holdout independence. Keep the
+existing cohort membership; do not add full-state names or territories.
 
 ## First-time setup
 
@@ -23,7 +24,7 @@ From the repository root, activate your existing environment:
 
 ```bash
 source .venv/bin/activate
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-reviewed.txt
 python3 -m unittest discover -s tests -v
 python3 -m jupyter notebook
 ```
@@ -42,7 +43,8 @@ data/Processed-Data/test_project_ids.csv
 ```
 
 If they are missing, restore them from your team's shared processed data or
-run original global notebooks `02` then `03`. The patch **cannot** download
+use the documented reconstruction workflow only after team review; do not
+recreate or reshuffle official splits as part of routine setup. The patch **cannot** download
 private data, and it doesn't change Drive folders or authentication.
 
 ## Run these notebooks **in order**
@@ -64,7 +66,7 @@ Global paths and notebooks are unchanged.
 The original global test set was saved in `03` and not used for final model
 selection. Creating a fresh U.S. random split could put earlier global
 *training* projects into a new U.S. test set. Restricting the **existing**
-partition instead preserves the known holdout boundary and allows a later
+partition instead preserves the current split boundary and allows a later
 global-vs-U.S. model comparison on exactly the same U.S. holdout rows. The
 resulting subset may not be perfectly stratified; inspect class balance.
 
@@ -78,21 +80,30 @@ in `utils/preprocessing.py` default to prior behavior and therefore do
 **not** silently change the original global notebooks. Learned category
 medians and encoders are fit inside each CV training fold.
 
+Even retained goal, duration, category, subcategory and location rely on
+assumptions about availability and meaning around launch. Computational fold
+isolation does not verify a historical launch-time feature set.
+
 The historical meaning of `funded date` and the launch-time availability
 of reward/title fields are still unverified. If verified, compare an
 expanded feature configuration in training-only CV before final selection.
 
-## Stop points before shared 06
+## Shared 06 and evaluation boundary
 
-1. Obtain a decision from the Challenge Advisor on the geographic proxy or
-   find verified country labels. If the cohort definition changes,
-   regenerate U.S. artifacts and rerun U.S. 03-05.
-2. Review the optional preprocessing flags and regression tests with the
-   shared preprocessing-code owner.
-3. Confirm any additional feature families were observable at prediction
-   time; do not enable fields merely because they raise accuracy.
-4. Freeze preprocessing and tuning protocol **before** evaluating the
-   U.S. official holdout. Keep your global work as an optional extension.
+Run active notebooks in this order after restoring existing processed data:
+04 feature engineering, 04b U.S. EDA, 05 baselines, then optional 05a feature check.
+01 is a scope audit; 02/03 are data preparation, not routine verification reruns.
+The historical combined raw 01/original 05 protocol is not the current model protocol.
 
-This setup intentionally does **not** implement shared `06`, tune
-hyperparameters, open held-out labels for evaluation, or integrate Streamlit.
+Training-only 06 work can proceed with the frozen conservative policy and
+fold-contained or nested selection. The existing official U.S. reserved test
+includes 1,486 IDs used in historical raw training; it is historically exposed,
+although current partitions are disjoint. Do not rerandomize to claim independence.
+Final scoring/publication waits for Anna and Zasha's evaluation agreement, ideally
+with advisor input. See [evaluation decisions](evaluation_decisions.md) and
+[handoff](06_handoff.md). No final test labels are needed for 04/04b/05/05a.
+
+The Drive upload helper syncs only top-level processed files, not `us_only/`
+or `international_only/`. Restore cohort folders separately through the team's
+approved data-sharing process. Do not flatten colliding filenames or regenerate
+splits. See [environment guidance](environment_reproducibility.md).

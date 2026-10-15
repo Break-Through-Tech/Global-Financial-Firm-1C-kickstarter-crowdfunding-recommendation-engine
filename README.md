@@ -25,11 +25,11 @@ The U.S. subset is **provisional**. The dataset does not include a verified coun
 | HistGradientBoosting | **0.7235** | **0.6684** | **0.7156** |
 | Logistic Regression | 0.7199 | 0.6684 | 0.7111 |
 | Random Forest | 0.7117 | 0.6583 | 0.7036 |
-| KNN | 0.6990 | 0.6527 | 0.7069 |
+| KNN | 0.6990 | 0.6531 | 0.7073 |
 | Decision Tree | 0.6867 | 0.6491 | 0.6958 |
 | Dummy (majority) | 0.5000 | 0.5461 | 0.7065 |
 
-These are **cross-validation results**, not final test-set results. The majority-class dummy's F1 is relatively high because it predicts the positive class for every row; use the complete set of metrics to compare models.
+These are **training-only cross-validation results**, refreshed in the reviewed October 15 environment. KNN accuracy/F1 changed from 0.6527/0.7069 to 0.6531/0.7073; all baseline AUC values match to four decimals. These are not final test-set results. The majority-class dummy's F1 is relatively high because it predicts the positive class for every row; use the complete set of metrics to compare models.
 
 An additional **training-only feature experiment** found that four optional launch-time candidate features changed Logistic Regression ROC-AUC from **0.7199 to 0.7235**, while HistGradientBoosting changed from **0.7235 to 0.7232**. The differences are small and do not justify a claim of superiority. See [`05a_safe_feature_check.ipynb`](notebooks/us_only/05a_safe_feature_check.ipynb).
 
@@ -54,7 +54,7 @@ From the repository root:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-reviewed.txt
 python3 -m unittest discover -s tests -v
 ```
 
@@ -68,15 +68,15 @@ Our existing [GitHub Actions workflow](.github/workflows/python-app.yml) runs Py
 
 - Candidate predictions are intended for **campaign launch**. The conservative U.S. baseline excludes unverified `funded date`-derived timing, title flags, `renamed`, and scraped reward-level features.
 - Learned feature statistics and categorical encodings are fitted inside training folds during cross-validation. The original target encoder was separately reviewed and tested for training/inference index collisions; see [`docs/model_validation.md`](docs/model_validation.md).
-- The geographic proxy and historical availability of some fields still need source verification or Challenge Advisor review.
+- Parth Rana confirmed U.S. primary scope. State/DC suffixes are a geographic proxy, not verified registration country. Even retained goal, duration, category and location assume historical availability around launch.
 - Feature associations are **not causal effects**. Recommendations must not imply that changing a funding goal, category, or reward automatically changes a campaign's outcome.
-- Final tuning and model selection must use training data only; the reserved U.S. test set is for final evaluation after selecting a configuration.
+- Historical raw EDA/model training included 1,486 current U.S. reserved IDs (1,630 combined; 84 international). Current partitions are disjoint, but the holdout is historically exposed. No final scoring/publication until Anna and Zasha agree on the protocol, ideally with advisor input. See [evaluation decisions](docs/evaluation_decisions.md).
 
 ## Next steps
 
-1. Confirm the U.S. scope and prediction-time feature policy with the team and Challenge Advisor.
+1. Use the frozen conservative U.S. feature policy; review the [06 handoff](docs/06_handoff.md) together.
 2. Tune HistGradientBoosting and Logistic Regression (optionally Random Forest) and select the final model using training-only validation in `06`.
-3. Evaluate the selected model once on the reserved test set and document all required classification metrics.
+3. Agree on the final-evaluation protocol before scoring the historically exposed reserved set; seek independent external/prospective evidence if available.
 4. Complete interpretation/error analysis in `07`, then implement the recommendation prototype.
 
 ## Team
@@ -93,3 +93,15 @@ Our existing [GitHub Actions workflow](.github/workflows/python-app.yml) runs Py
 - **Acknowledgements:** Break Through Tech AI Studio, State Street challenge sponsors, Challenge Advisor, and team collaborators.
 
 Release notes for the baseline milestone are in [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
+
+The active training-only run order is U.S. 04 → 04b → 05 → optional 05a;
+international 04 → 05 is secondary. Combined raw 01/original 05 are historical;
+V2/V3 results predate corrected encoder behavior, and V3 top-12 selection before
+CV is exploratory. Combined 05b is a current-code diagnostic, not the primary
+conservative model. Historical outputs are preserved. In historical combined 04
+heatmaps, low-support cells remain colored even where percentages are omitted;
+do not interpret them as masked or sufficiently supported.
+
+Use [reviewed environment/artifact guidance](docs/environment_reproducibility.md).
+The Drive helper uploads top-level processed files only; cohort subdirectories
+need separate approved sharing/restoration. Do not recreate official splits.

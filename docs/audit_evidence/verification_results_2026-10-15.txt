@@ -1,0 +1,636 @@
+{
+  "tests": "42 passed in both python3 and .venv/bin/python",
+  "index": "unchanged",
+  "membership": "before/after ordered masks identical; saved cohort rows and split IDs reconciled",
+  "geographic_reclassifications": [
+    {
+      "project id": 82500894,
+      "location": "St Croix, Virgin Islands, U.S.",
+      "before": "explicit_us",
+      "after": "us_territory"
+    },
+    {
+      "project id": 1475984188,
+      "location": "Cruz Bay, Virgin Islands, U.S.",
+      "before": "explicit_us",
+      "after": "us_territory"
+    },
+    {
+      "project id": 1846069134,
+      "location": "Charlottesville, Virginia",
+      "before": "unknown",
+      "after": "explicit_us"
+    }
+  ],
+  "protected_file_hashes": {
+    "data/Raw-data/DSI_kickstarterscrape_dataset.csv": "b788f3c4527c8203bd237367b2c142046f5dbf9bd48fe5d84ca9478126ab8c52",
+    "data/Processed-Data/DSI_kickstarterscrape_dataset_cleaned.csv": "367c2f7b21571d4e79f1ab04c066808c5b24ce54ef4a8e98632ac7f44c737764",
+    "data/Processed-Data/base_preprocessor.joblib": "cfd52b7dc91d6575e6a5340e9cee20117f88ff0ca3eec628cec31a163f15c08a",
+    "data/Processed-Data/X_test_base_preprocessed.csv": "e3bc437633edcb8c061055d37d18f93547db8c7726e91851b011ce6952a16143",
+    "data/Processed-Data/X_train_base_preprocessed.csv": "73c7b2cc3d0449415fb2e1e5b16ccc11005cefbc0904893a819e8fd828a9f8d0",
+    "data/Processed-Data/test_project_ids.csv": "c2b9fb28cbd5fa5107a84d45185115ad75f9cdead18022f75d8e6ea86143b3aa",
+    "data/Processed-Data/train_project_ids.csv": "c1c5019a3069d0b7d2042c966e3d4fa0d447468766059af3dca9633c6b94b303",
+    "data/Processed-Data/y_train.csv": "eb569b420e86bd414a11d45490ab9e15b2f2dba862d527b58d957fba44744be3",
+    "data/Processed-Data/international_only/DSI_kickstarterscrape_dataset_cleaned.csv": "22dcc6b3b1d23d9b6a21b8925a74a03e319658bafe60385c9ede7bac11d0cea0",
+    "data/Processed-Data/international_only/base_preprocessor.joblib": "f5788d2d940218e30cd239a62b92905783a476ee446d2e077ca73f4a2e1a58c4",
+    "data/Processed-Data/international_only/location_scope_summary.csv": "577bcd6e44e27d56f1a533fdbbfa92bd82016c4fe5c7382c93d034c61e193bad",
+    "data/Processed-Data/international_only/unknown_location_counts.csv": "cb064a9371aeaa39b3089027a689c3acc6d67b393ae50a901e7d5e92fa1368a1",
+    "data/Processed-Data/international_only/X_test_base_preprocessed.csv": "dd16daff7c837b5137f103d1833a4d0e1f650f7295182097d1de47020430bd5b",
+    "data/Processed-Data/international_only/country_region_provenance.csv": "637caee6eddfe202600631842d3d93f94e9cd1273a9d644a14bdbdfec0c0b3a8",
+    "data/Processed-Data/international_only/X_train_base_preprocessed.csv": "44f43e718fa31b7d63dd065ea00f8f02e740c01bd7278500a9c429d39243ed56",
+    "data/Processed-Data/international_only/test_project_ids.csv": "3f93fb61c4f1eff6bcde093ca67be6d1dd2d989639cafcc6d10898b3698d5717",
+    "data/Processed-Data/international_only/named_country_counts.csv": "01029e9c2da08a0ae1da2351e7d42d9356289a4b4f687137071dc19ed009bb76",
+    "data/Processed-Data/international_only/train_project_ids.csv": "fe318302c56077cbb99ea564557fb0d392a774c42fc5ddfc5403f496ffadad0e",
+    "data/Processed-Data/international_only/training_cv_baselines.csv": "1fb262257bb2d207bff844f24249568f4f41923cccc8ea0d00afb2c9d8d49ab4",
+    "data/Processed-Data/international_only/y_train.csv": "3aa100f47f6f1539aba76854422414794fe7e1d390659ceda00742b3e92a779a",
+    "data/Processed-Data/us_only/DSI_kickstarterscrape_dataset_cleaned.csv": "987cd14a315d67503e0eb9deaec5b29dcc5b3333ca7184b555c3da5a72840b2c",
+    "data/Processed-Data/us_only/base_preprocessor.joblib": "773f90a52c5b6294fdf47f0638837b2d9a6217bd7f2574e1e6b135d263330276",
+    "data/Processed-Data/us_only/X_test_base_preprocessed.csv": "6681a0811db7c7c02dd3f0ea4d6ec0c2d4a7dceedf7967e28c36dfbae425f5ad",
+    "data/Processed-Data/us_only/X_train_base_preprocessed.csv": "e60023c4fcb49ed359551157056ae2f2d295b51e70cac70ee39dc1ad201e3ebe",
+    "data/Processed-Data/us_only/test_project_ids.csv": "bfa1535ee44b4aecb6c87924c43d0f2d4ca3f1eeecc4847eb0e6efed5b1dff33",
+    "data/Processed-Data/us_only/train_project_ids.csv": "19e1beb4e4b8dc4873f42794bef047f1851fc619729220d48bca8caed8328410",
+    "data/Processed-Data/us_only/y_train.csv": "e287ff422af683c4398ba325c2e7bcc8f42e1304273409e6d279b5f9dcd9fd6f"
+  },
+  "changed_existing_data": [
+    "data/Processed-Data/international_only/training_cv_baselines.csv"
+  ],
+  "notebooks": [
+    {
+      "notebook": "notebooks/us_only/04_feature_engineering.ipynb",
+      "status": "saved",
+      "seconds": 23.605736017227173,
+      "code_cells": 5
+    },
+    {
+      "notebook": "notebooks/us_only/04b_us_eda.ipynb",
+      "status": "saved",
+      "seconds": 1.8482069969177246,
+      "code_cells": 4
+    },
+    {
+      "notebook": "notebooks/us_only/05_modeling.ipynb",
+      "status": "saved",
+      "seconds": 43.59320616722107,
+      "code_cells": 3
+    },
+    {
+      "notebook": "notebooks/us_only/05a_safe_feature_check.ipynb",
+      "status": "saved",
+      "seconds": 10.27875804901123,
+      "code_cells": 3
+    },
+    {
+      "notebook": "notebooks/international_only/04_feature_engineering.ipynb",
+      "status": "saved",
+      "seconds": 3.100468873977661,
+      "code_cells": 4
+    },
+    {
+      "notebook": "notebooks/international_only/05_modeling.ipynb",
+      "status": "saved",
+      "seconds": 9.11451768875122,
+      "code_cells": 3
+    }
+  ],
+  "current_code_cv_metrics": [
+    {
+      "cohort": "us",
+      "model": "dummy",
+      "metrics": {
+        "test_roc_auc": 0.5,
+        "test_accuracy": 0.546149563926517,
+        "test_f1": 0.7064640761338568,
+        "test_average_precision": 0.546149563926517,
+        "test_balanced_accuracy": 0.5
+      },
+      "auc_folds": [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "seconds": 0.8047149181365967
+    },
+    {
+      "cohort": "us",
+      "model": "logistic",
+      "metrics": {
+        "test_roc_auc": 0.7198865152877951,
+        "test_accuracy": 0.6684357023566524,
+        "test_f1": 0.71111548552791,
+        "test_average_precision": 0.7286150746908271,
+        "test_balanced_accuracy": 0.6604250840431732
+      },
+      "auc_folds": [
+        0.722408578472026,
+        0.7121566231552954,
+        0.7145113243198866,
+        0.7251407152912701,
+        0.725215335200498
+      ],
+      "seconds": 1.2109341621398926
+    },
+    {
+      "cohort": "us",
+      "model": "knn",
+      "metrics": {
+        "test_roc_auc": 0.6989731689164087,
+        "test_accuracy": 0.6531452959732789,
+        "test_f1": 0.7072975484539326,
+        "test_average_precision": 0.7055633102845438,
+        "test_balanced_accuracy": 0.6415340710080215
+      },
+      "auc_folds": [
+        0.7038911018259439,
+        0.6885681449864126,
+        0.6990522989401519,
+        0.6987724520037152,
+        0.7045818468258201
+      ],
+      "seconds": 5.093592166900635
+    },
+    {
+      "cohort": "us",
+      "model": "decision_tree",
+      "metrics": {
+        "test_roc_auc": 0.6867267016401666,
+        "test_accuracy": 0.6491000185563185,
+        "test_f1": 0.6958285941655322,
+        "test_average_precision": 0.6901848000601912,
+        "test_balanced_accuracy": 0.640326941971888
+      },
+      "auc_folds": [
+        0.6895245144249321,
+        0.6883987365282421,
+        0.6777641361946762,
+        0.6879216284105,
+        0.6900244926424823
+      ],
+      "seconds": 1.234205961227417
+    },
+    {
+      "cohort": "us",
+      "model": "random_forest",
+      "metrics": {
+        "test_roc_auc": 0.7116723296038387,
+        "test_accuracy": 0.6583410651326776,
+        "test_f1": 0.7036105002328858,
+        "test_average_precision": 0.7260670621048348,
+        "test_balanced_accuracy": 0.6497730656176062
+      },
+      "auc_folds": [
+        0.7123863212984565,
+        0.702610987892331,
+        0.7062367039712565,
+        0.7195061996966623,
+        0.7176214351604873
+      ],
+      "seconds": 30.03539800643921
+    },
+    {
+      "cohort": "us",
+      "model": "hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.7235161658203715,
+        "test_accuracy": 0.6683985897197996,
+        "test_f1": 0.7155906397108375,
+        "test_average_precision": 0.7377222299156994,
+        "test_balanced_accuracy": 0.6586913316413902
+      },
+      "auc_folds": [
+        0.7263015001018256,
+        0.7112938833197335,
+        0.718185800028839,
+        0.7353546769931506,
+        0.726444968658309
+      ],
+      "seconds": 2.439439058303833
+    },
+    {
+      "cohort": "us_extra",
+      "model": "logistic",
+      "metrics": {
+        "test_roc_auc": 0.7235137030917829,
+        "test_accuracy": 0.669994433104472,
+        "test_f1": 0.7111956455979341,
+        "test_average_precision": 0.7320050719725708,
+        "test_balanced_accuracy": 0.6624672398779646
+      },
+      "auc_folds": [
+        0.7253200562666682,
+        0.7134099956963722,
+        0.7185626105600301,
+        0.7300973886787085,
+        0.7301784642571353
+      ],
+      "seconds": 1.5239598751068115
+    },
+    {
+      "cohort": "us_extra",
+      "model": "hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.7232422994729665,
+        "test_accuracy": 0.6689923919094451,
+        "test_f1": 0.7161750454520291,
+        "test_average_precision": 0.7375017566858274,
+        "test_balanced_accuracy": 0.659262714275489
+      },
+      "auc_folds": [
+        0.724883650632111,
+        0.7105206750555457,
+        0.7190743783008255,
+        0.734768380644066,
+        0.7269644127322841
+      ],
+      "seconds": 2.57328200340271
+    },
+    {
+      "cohort": "international",
+      "model": "dummy",
+      "metrics": {
+        "test_roc_auc": 0.5,
+        "test_accuracy": 0.6096724328303276,
+        "test_f1": 0.7575106564364876,
+        "test_balanced_accuracy": 0.5,
+        "test_average_precision": 0.6096724328303276
+      },
+      "auc_folds": [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "seconds": 0.4093441963195801
+    },
+    {
+      "cohort": "international",
+      "model": "logistic",
+      "metrics": {
+        "test_roc_auc": 0.6573450143493247,
+        "test_accuracy": 0.6418991534781009,
+        "test_f1": 0.7280041809707346,
+        "test_balanced_accuracy": 0.6013161252385391,
+        "test_average_precision": 0.7439349807739554
+      },
+      "auc_folds": [
+        0.663741789819376,
+        0.6304649014778325,
+        0.6915449932691312,
+        0.6215698457077766,
+        0.6794035414725069
+      ],
+      "seconds": 0.42380690574645996
+    },
+    {
+      "cohort": "international",
+      "model": "knn",
+      "metrics": {
+        "test_roc_auc": 0.6509681633604048,
+        "test_accuracy": 0.6503103913630229,
+        "test_f1": 0.7455197534504182,
+        "test_balanced_accuracy": 0.5968926130564063,
+        "test_average_precision": 0.7257185537712211
+      },
+      "auc_folds": [
+        0.6388290229885059,
+        0.642805829228243,
+        0.6556383970177074,
+        0.6250647198923059,
+        0.6925028476752614
+      ],
+      "seconds": 0.4376959800720215
+    },
+    {
+      "cohort": "international",
+      "model": "decision_tree",
+      "metrics": {
+        "test_roc_auc": 0.6583802552552553,
+        "test_accuracy": 0.6503128450496871,
+        "test_f1": 0.7334156616697133,
+        "test_balanced_accuracy": 0.6114504282607731,
+        "test_average_precision": 0.7259850768139071
+      },
+      "auc_folds": [
+        0.6448327175697864,
+        0.6351600985221675,
+        0.6777726001863933,
+        0.6292067929998965,
+        0.7049290669980326
+      ],
+      "seconds": 0.4232456684112549
+    },
+    {
+      "cohort": "international",
+      "model": "random_forest",
+      "metrics": {
+        "test_roc_auc": 0.668458344428172,
+        "test_accuracy": 0.6573254815360079,
+        "test_f1": 0.7461152733083063,
+        "test_balanced_accuracy": 0.609783706119913,
+        "test_average_precision": 0.7583835954822226
+      },
+      "auc_folds": [
+        0.6524014778325122,
+        0.6520679392446634,
+        0.6935642539090815,
+        0.6281971626799213,
+        0.7160608884746815
+      ],
+      "seconds": 1.6751880645751953
+    },
+    {
+      "cohort": "international",
+      "model": "hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.6405155309250137,
+        "test_accuracy": 0.615966139124034,
+        "test_f1": 0.7014974297934631,
+        "test_balanced_accuracy": 0.5810383659521591,
+        "test_average_precision": 0.7267284551597842
+      },
+      "auc_folds": [
+        0.6430110837438423,
+        0.6524784482758621,
+        0.6682976079527804,
+        0.5838252045148598,
+        0.654965310137724
+      ],
+      "seconds": 2.9253299236297607
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "current_features_target/logistic",
+      "metrics": {
+        "test_roc_auc": 0.7645375892862339,
+        "test_accuracy": 0.7054428359551542,
+        "test_balanced_accuracy": 0.6981788314569782,
+        "test_f1": 0.7422215658088643,
+        "test_average_precision": 0.7684334097065467
+      },
+      "auc_folds": [
+        0.7590514405676088,
+        0.763019277128025,
+        0.771542050163068
+      ],
+      "seconds": 5.9184160232543945
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "current_features_target/hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.7664579078244168,
+        "test_accuracy": 0.7072866224753035,
+        "test_balanced_accuracy": 0.697937797955014,
+        "test_f1": 0.7486699649527616,
+        "test_average_precision": 0.7732975493313551
+      },
+      "auc_folds": [
+        0.7616385101487452,
+        0.7639867075082694,
+        0.7737485058162359
+      ],
+      "seconds": 8.08469295501709
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "exclude_renamed/logistic",
+      "metrics": {
+        "test_roc_auc": 0.7644671280326193,
+        "test_accuracy": 0.7052721199034617,
+        "test_balanced_accuracy": 0.6980163358488136,
+        "test_f1": 0.7420536212110557,
+        "test_average_precision": 0.7684221446886225
+      },
+      "auc_folds": [
+        0.7592073575185001,
+        0.7628457443565009,
+        0.7713482822228567
+      ],
+      "seconds": 5.6574482917785645
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "exclude_renamed/hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.7664887673669035,
+        "test_accuracy": 0.7062964581835139,
+        "test_balanced_accuracy": 0.6969680096400258,
+        "test_f1": 0.74775739999242,
+        "test_average_precision": 0.7732734582875551
+      },
+      "auc_folds": [
+        0.7622431647228286,
+        0.7642085355765048,
+        0.7730146018013769
+      ],
+      "seconds": 8.12160325050354
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "exclude_title_and_setup_flags/logistic",
+      "metrics": {
+        "test_roc_auc": 0.760542723209836,
+        "test_accuracy": 0.701584599325534,
+        "test_balanced_accuracy": 0.6940604379171388,
+        "test_f1": 0.7393979256072264,
+        "test_average_precision": 0.7649008712127086
+      },
+      "auc_folds": [
+        0.7543789288361499,
+        0.759082861093834,
+        0.7681663796995237
+      ],
+      "seconds": 4.766354084014893
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "exclude_title_and_setup_flags/hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.764176785283856,
+        "test_accuracy": 0.704145420543225,
+        "test_balanced_accuracy": 0.6944874595037591,
+        "test_f1": 0.746625003935323,
+        "test_average_precision": 0.7719566112165029
+      },
+      "auc_folds": [
+        0.7588099005654678,
+        0.7617952316683673,
+        0.7719252236177326
+      ],
+      "seconds": 6.034945964813232
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "exclude_launch_timing/logistic",
+      "metrics": {
+        "test_roc_auc": 0.7638571316733523,
+        "test_accuracy": 0.704657488256001,
+        "test_balanced_accuracy": 0.6972852169944805,
+        "test_f1": 0.7417781108361429,
+        "test_average_precision": 0.7677095185828903
+      },
+      "auc_folds": [
+        0.758672742769722,
+        0.7621027463064367,
+        0.7707959059438982
+      ],
+      "seconds": 5.223124980926514
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "exclude_launch_timing/hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.7664218377079893,
+        "test_accuracy": 0.7056476140753855,
+        "test_balanced_accuracy": 0.6963493257370166,
+        "test_f1": 0.7471108435554105,
+        "test_average_precision": 0.7748452134052455
+      },
+      "auc_folds": [
+        0.7612517666635501,
+        0.7644693852281857,
+        0.773544361232232
+      ],
+      "seconds": 7.315514087677002
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "onehot_without_renamed/logistic",
+      "metrics": {
+        "test_roc_auc": 0.7661376658516795,
+        "test_accuracy": 0.707013412438754,
+        "test_balanced_accuracy": 0.6998027828639627,
+        "test_f1": 0.7435071818621587,
+        "test_average_precision": 0.7696338875332481
+      },
+      "auc_folds": [
+        0.7616518067056655,
+        0.7638439177314075,
+        0.7729172731179659
+      ],
+      "seconds": 5.84824013710022
+    },
+    {
+      "cohort": "combined_05b",
+      "model": "onehot_without_renamed/hist_gradient_boosting",
+      "metrics": {
+        "test_roc_auc": 0.7662295692433175,
+        "test_accuracy": 0.707388882128238,
+        "test_balanced_accuracy": 0.6975352042748177,
+        "test_f1": 0.7499163809196404,
+        "test_average_precision": 0.7726447620111406
+      },
+      "auc_folds": [
+        0.7605115210854596,
+        0.7677642635638431,
+        0.7704129230806501
+      ],
+      "seconds": 15.733561038970947
+    },
+    {
+      "cohort": "combined_v3_current_code",
+      "model": "dummy (majority)",
+      "metrics": {
+        "test_roc_auc": 0.5,
+        "test_accuracy": 0.547357280928943,
+        "test_f1": 0.7074736855133441,
+        "test_average_precision": 0.547357280928943
+      },
+      "auc_folds": [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "cohort": "combined_v3_current_code",
+      "model": "logistic",
+      "metrics": {
+        "test_roc_auc": 0.7647182384846679,
+        "test_accuracy": 0.7046916923445684,
+        "test_f1": 0.741589931992119,
+        "test_average_precision": 0.7686874578321778
+      },
+      "auc_folds": [
+        0.7586712884683601,
+        0.7663155621670905,
+        0.7646348866475482,
+        0.7626162092813056,
+        0.771353245859035
+      ]
+    },
+    {
+      "cohort": "combined_v3_current_code",
+      "model": "knn (k=25)",
+      "metrics": {
+        "test_roc_auc": 0.6964012665543133,
+        "test_accuracy": 0.655114588602037,
+        "test_f1": 0.7208669604734106,
+        "test_average_precision": 0.6975773728816517
+      },
+      "auc_folds": [
+        0.6986745487580318,
+        0.7004402449592535,
+        0.6935205863917305,
+        0.6893437380355063,
+        0.7000272146270443
+      ]
+    },
+    {
+      "cohort": "combined_v3_current_code",
+      "model": "decision tree",
+      "metrics": {
+        "test_roc_auc": 0.7300775168935925,
+        "test_accuracy": 0.6812007913890362,
+        "test_f1": 0.7279111727444136,
+        "test_average_precision": 0.7322818958517043
+      },
+      "auc_folds": [
+        0.7197912167890334,
+        0.7325088752329956,
+        0.7310088373497384,
+        0.7298757069272933,
+        0.7372029481689015
+      ]
+    },
+    {
+      "cohort": "combined_v3_current_code",
+      "model": "random forest",
+      "metrics": {
+        "test_roc_auc": 0.7655224955058513,
+        "test_accuracy": 0.7045208282316107,
+        "test_f1": 0.7468301075777587,
+        "test_average_precision": 0.7734703631123456
+      },
+      "auc_folds": [
+        0.7630028161751768,
+        0.7662204115774628,
+        0.7642915458534042,
+        0.7654206218865842,
+        0.7686770820366283
+      ]
+    },
+    {
+      "cohort": "combined_v3_current_code",
+      "model": "hist gradient boosting",
+      "metrics": {
+        "test_roc_auc": 0.7676055501226089,
+        "test_accuracy": 0.7056817855253171,
+        "test_f1": 0.7480687593514443,
+        "test_average_precision": 0.7758199696196206
+      },
+      "auc_folds": [
+        0.761566148125357,
+        0.7679406495550858,
+        0.7663967577525446,
+        0.7677322767829933,
+        0.7743919183970643
+      ]
+    }
+  ],
+  "final_labels": "y_test.csv never opened, hashed or modified; reserved ID CSV read with usecols only"
+}

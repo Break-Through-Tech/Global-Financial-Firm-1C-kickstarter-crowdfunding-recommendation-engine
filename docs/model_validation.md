@@ -1,8 +1,8 @@
 # Pre-tuning validation and launch-time feature review
 
-**Status:** Computational diagnostics completed (10/10 sensitivity experiments, 3/3 chronological comparisons, and 8/8 preprocessing tests). Source-field verification, code-owner review, and approval of the final feature policy remain open.
+**Status (October 15 remediation):** U.S. training-only development may proceed under the frozen conservative policy below. Final held-out scoring waits for Anna and Zasha to agree on the evaluation protocol, ideally with advisor input. Historical 05b tables below are preserved outputs, not exact reproduction claims under the current encoder/environment.
 
-**Scope:** Use the official split from `03_preprocess_data.ipynb`. All model selection and diagnostic experiments use the **training partition only**; the official held-out test set is reserved for final evaluation.
+**Scope:** Use the official split from `03_preprocess_data.ipynb`. All model selection and diagnostic experiments use the **training partition only**; retain the existing official split. The reserved test set has historical development exposure; see the evaluation policy below.
 
 ## 1. Why this work exists
 
@@ -21,8 +21,9 @@ The project is currently framed as predicting success at or near the **campaign 
 | `status`, `target` | Never inputs | Outcome labels. |
 | `pledged`, `funded percentage`, `backers`, `updates`, `comments` | Excluded | Post-launch financial or engagement outcomes. |
 | `project id`, `url`, `creator`, `slug` | Not direct inputs | Identifiers; derived values require historical-availability review. |
-| `goal`, `duration`, `category`, `subcategory`, `location`, `levels` | Provisionally allowed | Plausibly available at launch, but confirm whether archived values reflect later edits. |
-| `name`, `reward levels` | Not yet verified as launch snapshots | A subsequent scrape could capture changes after launch. |
+| `goal`, `duration`, `category`, `subcategory`, `location` | Retained conservative inputs | Assume availability and meaning around launch; historical snapshots, duration semantics and currency are unverified. |
+| `levels`, `reward levels` and all reward-derived features | Excluded from active conservative models | Launch-time reward snapshot not verified; historical base matrices still include levels. |
+| `name` | Excluded; not verified as launch snapshot | A subsequent scrape could capture changes after launch. |
 | `renamed` | **Exclude from conservative models** | Current title versus URL slug may reveal a later rename. |
 | `funded date` | **Source meaning unresolved** | Code treats it as campaign end/deadline date; if outcome-dependent, launch-timing derivations may leak information. |
 | `backers_needed` | Historical naming retained | Computed as `log1p(goal) - log1p(median_tier)`; not a literal number of needed backers. |
@@ -41,7 +42,19 @@ This supports a launch-time feature only if `funded date` is a suitable *schedul
 
 ### Geographic scope
 
-The challenge brief discusses U.S.-based Kickstarter projects, while the current modeling population is all 41,841 settled campaigns after cleaning. State abbreviations in a location field cannot establish the project's country with certainty. Ask the Challenge Advisor whether the broader sample is acceptable. If U.S.-only is mandatory, establish a reliable country indicator first and regenerate the official split and all downstream results.
+Parth Rana has confirmed U.S. campaigns as the primary evaluation population (team-provided context). The active cohort is the existing state/DC **comma-qualified suffix proxy**, not verified registration country. Combined/global and explicit named international cohorts remain secondary. Keep all official memberships and ordering; advisor approval of the U.S. scope does not resolve historical exposure or source semantics.
+
+### Frozen conservative U.S. feature policy
+
+Use `include_timing=False, include_flags=False, include_reward=False, exclude_renamed=True`. Inputs are goal, duration, category, subcategory and location. Exclude pledged, backers, funded percentage, updates, comments, outcome-derived fields, unverified title/slug flags, renamed, rewards/levels, and reconstructed date/timing features. Retain training-fold category/subcategory log-goal references, log goal, goal per day, duration and categorical state proxy. The optional 05a extension is a documented experiment, not a newly approved baseline. Do not broaden families to raise AUC. A computationally leakage-aware pipeline is not a historically verified launch-time feature set.
+
+### Historical development exposure and evaluation claims
+
+`notebooks/01_explore_data.ipynb` and the original `notebooks/05_modeling.ipynb` load raw, undeduplicated data and call `get_data_split()` before the current cleaned-data protocol. That historical raw split overlaps itself by 54 project IDs. Its training rows include **1,630 current combined reserved test IDs**, including **1,486 U.S.** and **84 international** IDs. The current official splits are disjoint; this is prior target-aware exploration/model development exposure, not current membership overlap. The amount of resulting optimism has not been measured.
+
+The final holdout cannot honestly be described as untouched by all prior development. Existing fold-contained training CV remains development validation; it does not repair the historical exposure or establish prospective performance. Rerandomizing the same explored dataset cannot guarantee independence and is not authorized. Retain the official split, label any future approved test score as historically exposed retrospective evaluation, and disclose the development/selection history. Do not claim prospective generalization from this historical dataset alone. An independent external or prospective evaluation would provide stronger evidence if available and separately authorized.
+
+See [proposed evaluation policy](evaluation_decisions.md). No final test score may be calculated or published until Anna and Zasha agree on that protocol, ideally with advisor input.
 
 ## 3. Data-integrity diagnostics
 
@@ -66,7 +79,7 @@ The implied launch-year counts were: 2009 **707**, 2010 **5,791**, 2011 **14,681
 
 ## 4. Preprocessing regression tests
 
-**Result: 8/8 tests passed.** The suite in `tests/test_preprocessing.py` checks:
+**Historical result: 8/8 preprocessing tests passed.** The remediation suite adds coverage; current totals are in the remediation report. The suite in `tests/test_preprocessing.py` checks:
 
 - Exclusion of known post-launch outcome columns.
 - Pipeline compatibility with cross-validation.
@@ -160,8 +173,10 @@ V3's raw scores should not be directly compared as controlled before/after estim
 
 ### 8.2 Target population
 
-- [ ] Confirm with Challenge Advisor whether the 41,841-campaign settled population is acceptable or U.S.-only filtering is required.
-- [ ] If a different population is required, identify defensible location/country evidence, regenerate the split, and recompute downstream results.
+- [x] Advisor confirmed U.S. primary scope (user-provided confirmation).
+- [x] Preserve existing state/DC proxy population and ordered official splits.
+- [ ] Verify source registration-country/snapshot evidence; do not automatically expand cohorts.
+- [ ] Agree final evaluation wording/protocol in light of historical holdout exposure.
 
 ### 8.3 Team approval and reproducibility
 
@@ -185,30 +200,10 @@ V3's raw scores should not be directly compared as controlled before/after estim
 - Campaign feature associations are not evidence that changing those features will *cause* a campaign to succeed. A recommendation prototype must distinguish descriptive predictions from causal claims.
 - Do not tune features, algorithms, thresholds, or hyperparameters using the official test set; use it only once the modeling protocol is finalized.
 
-## 10. Provisional handoff to `06_evaluation_and_tuning.ipynb`
+## 10. Handoff to shared 06
 
-**Computational validation is finished. The validation issue can move to code-owner/Challenge Advisor review, but the prediction-time feature policy is not fully approved.**
+Anna and Zasha can start training-only tuning with conservative U.S. Logistic Regression (one-hot) and HGB (cross-fitted target encoding); Random Forest is an optional existing comparator. Reuse official U.S. training IDs/labels and the existing builders. Put preprocessing, feature selection and hyperparameter/threshold selection inside training folds; use nested CV when estimating the performance of a selection procedure. Do not execute existing 06/07 cells blindly: their global paths and final-evaluation cells need a separate team review.
 
-Suggested starting configurations after that review:
+Final held-out scoring remains gated by the proposed protocol in [evaluation decisions](evaluation_decisions.md). Source-field meaning and historical exposure remain limitations even after agreement. Historical V3 supervised top-12 ranking occurred before CV and is exploratory. Preserve V3 and 05b historical tables; current-code reruns cannot retroactively turn those into corrected-encoder results. Their sensitivity and chronological numbers are not universally numerically reproduced in the current environment.
 
-1. **HGB:** `categorical_strategy="target", exclude_renamed=True`, with timing enabled **only if** `funded date` semantics and availability are verified.
-2. **Logistic Regression:** `categorical_strategy="onehot", exclude_renamed=True`, with the same timing/availability condition.
-3. Retain a no-timing conservative variant (`include_timing=False, exclude_renamed=True`) if the date assumption cannot be validated. Exclude other unverified feature families as needed.
-
-A modest, training-only search across the leading models can then proceed, followed by a prespecified model-selection decision and one final evaluation against the canonical untouched test set.
-
-### Reproduce checks
-
-From the repository root:
-
-```bash
-source .venv/bin/activate
-python3 -m unittest discover -s tests -v
-python3 -m jupyter notebook
-```
-
-Open `notebooks/05b_pre_tuning_validation.ipynb`. The completed results above came from its saved outputs and need **not** be rerun merely to document them.
-
-## Summary
-
-The 05b computational phase is **complete**: 29,288 official training projects validated, 8/8 regression tests passed, 10/10 sensitivity comparisons finished, and 3/3 chronological experiments finished. Removing `renamed` costs little or no measured discrimination. One-hot encoding is a reasonable Logistic Regression candidate and target encoding remains reasonable for HGB. **Source-field semantics, U.S. scope, and teammate approval are still required before declaring any feature configuration final.**
+See [06 handoff](06_handoff.md), [remediation evidence](workflow_audit_remediation_2026-10-15.md) and [environment/artifact guidance](environment_reproducibility.md). Run `.venv/bin/python -m unittest discover -s tests -v` from the repository root.
