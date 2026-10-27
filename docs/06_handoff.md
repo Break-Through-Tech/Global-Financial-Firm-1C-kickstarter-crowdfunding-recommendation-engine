@@ -1,3 +1,26 @@
+# Current U.S. model handoff: October 27, 2026
+
+The training-only milestone is complete. Retain the original tuned HGB at threshold .5. Focused accuracy experiments found no meaningful improvement. Validation accuracy is **.6693**, AUC **.7239**, success F1 **.7158**, failure recall **.5572**. Confusion matrix (actual failed/successful by predicted failed/successful): **[[6814, 5415], [3495, 11221]]**. These are training-only outer-fold development metrics with prior-selection limitations, not reserved-test results.
+
+Read [final selection](final_model_selection.md) for exact settings, comparisons, inference examples, runtime versions, limitations and test evidence. The complete conservative pipeline and metadata are saved locally as `models/us_primary_model_v1.joblib` and `models/us_primary_model_v1.metadata.json`, ignored by Git. Fit uses all 26,945 official training rows. Predictions and probabilities match exactly after serialization on all rows.
+
+`utils.us_prediction.USPredictor` loads the model once; `.predict(campaign)` accepts goal, duration, category, subcategory and state/DC location and returns success probability, class, label and threshold. `predict_campaign(campaign)` is a convenience function. No Streamlit app has been built.
+
+Both new training notebooks ran successfully in fresh kernels. To reproduce from the repository root, run only:
+
+```bash
+.venv/bin/python scripts_execute_us_validation.py 06_us_accuracy_experiments.ipynb
+.venv/bin/python scripts_execute_us_validation.py 06_us_validation.ipynb
+```
+
+Do not rerun after freezing the artifact for reserved evaluation. No earlier completed experiments need rerunning. The original four tuning notebooks, 07 interpretability and Zasha's historical notebook are unchanged. The RF saved notebook contains a later .7216 result; the earlier .7209 report is preserved and the discrepancy is documented in final selection.
+
+Tests: **57 passed with local processed data**; **56 passed, 1 explicit integration skip** with an absent data root; no failures or errors. Critical CI lint passes. Unit tests are synthetic; absent private data does not prevent CI. A remote Actions run has not been triggered.
+
+Reserved evaluation remains pending explicit team approval. Review [the proposed protocol](us_reserved_test_protocol.md) and approve the frozen model hash before running `08_us_reserved_evaluation.ipynb`. Its approval gate is empty and it has not executed. No reserved labels were opened. Report any approved test score as retrospective evidence on historically exposed data, with separate exposed/not-known-exposed groups. Do not tune from test scores.
+
+The sections below preserve previous handoffs as historical context. Current status above supersedes their unfinished-work statements.
+
 # Anna + Zasha: shared 06 handoff
 
 **Ready for training-only collaboration. Final held-out scoring remains gated.**
