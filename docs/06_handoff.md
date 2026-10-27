@@ -65,3 +65,25 @@ selection within folds, and document the chosen procedure together. Wait for
 evaluation-protocol agreement before test scoring/publication; obtain source
 provenance or independent data before stronger launch-time/generalization claims.
 See [verification and complete file list](workflow_audit_remediation_2026-10-15.md).
+
+## October 27 model-specific tuning handoff
+
+The four model-specific notebooks and preliminary interpretability notebook were
+implemented and executed from fresh kernels. They use only the official U.S.
+training rows and do not load reserved U.S. IDs or labels. See
+[the consolidated training-only comparison](06_training_comparison.md) for the
+actual outputs, search budgets, hyperparameters, and limitations.
+
+HGB had the highest observed tuning-CV AUC at **.7255**, compared with its
+verified baseline of **.7235**. Logistic moved from **.7199** to **.7201**.
+Random Forest moved from **.7117** to **.7209**, but only five trials were
+completed because the larger search was too slow. Extra Trees reached **.7205**
+in a five-trial preliminary search; its reference baseline in that notebook is
+new and should not be treated as an approved historical number.
+
+These are ordinary tuning-CV estimates, not nested estimates. The apparent
+ranking is therefore preliminary, and the different RF/Extra Trees budgets make
+the comparison less balanced. HGB and Logistic are the clearest candidates for
+the next protocol discussion. The interpretability notebook provides fold-held
+out permutation importance for those two conservative baselines; it does not
+select a final model or make causal claims.
