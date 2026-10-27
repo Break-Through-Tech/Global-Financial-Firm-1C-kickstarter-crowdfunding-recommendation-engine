@@ -1,5 +1,7 @@
 import unittest
 from pathlib import Path
+import tempfile
+from unittest.mock import patch
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -7,8 +9,6 @@ import pandas as pd
 
 from utils.us_modeling import (
     CONSERVATIVE_POLICY,
-    EXPECTED_SETTLED_ROWS,
-    EXPECTED_TRAIN_ROWS,
     development_cv,
     load_us_training_data,
     conservative_pipeline,
@@ -30,30 +30,6 @@ class USModelingUtilityTests(unittest.TestCase):
         y = pd.Series([0, 1] * 6, name="target")
         return X, y
 
-    @unittest.skipUnless(
-        all(
-            (
-                Path(__file__).resolve().parents[1]
-                / "data"
-                / "Processed-Data"
-                / "us_only"
-                / filename
-            ).is_file()
-            for filename in (
-                "DSI_kickstarterscrape_dataset_cleaned.csv",
-                "train_project_ids.csv",
-            )
-        ),
-        "official processed U.S. data unavailable; skipping artifact integration test",
-    )
-    def test_official_training_membership_and_binary_labels(self):
-        X, y, project_ids = load_us_training_data()
-        self.assertEqual(len(X), EXPECTED_TRAIN_ROWS)
-        self.assertEqual(len(set(project_ids)), EXPECTED_TRAIN_ROWS)
-        self.assertEqual(set(y.unique()), {0, 1})
-        self.assertEqual(len(X), len(y))
-        self.assertNotIn("test_project_ids", X.columns)
-
     def test_conservative_pipeline_and_inputs(self):
         self.assertEqual(CONSERVATIVE_POLICY, {
             "include_timing": False,
@@ -73,6 +49,43 @@ class USModelingUtilityTests(unittest.TestCase):
         self.assertEqual(probabilities.shape, (4, 2))
         transformed = pipe.named_steps["features"].transform(X.iloc[:2])
         self.assertNotIn("funded date", transformed.columns)
+
+    def test_loader_reconstructs_official_order_with_synthetic_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'utils').mkdir()
+            (root / 'utils/preprocessing.py').touch()
+            data = root / 'data/Processed-Data/us_only'
+            data.mkdir(parents=True)
+            X, y = self.synthetic_training_data()
+            X['project id'] = np.arange(len(X))
+            X['status'] = np.where(y == 1, 'successful', 'failed')
+            X.to_csv(data / 'DSI_kickstarterscrape_dataset_cleaned.csv', index=False)
+            ids = pd.DataFrame({'project id': X['project id'], 'target': y}).iloc[::-1]
+            ids.to_csv(data / 'train_project_ids.csv', index=False)
+            with patch('utils.us_modeling.EXPECTED_TRAIN_ROWS', 12), patch(
+                    'utils.us_modeling.EXPECTED_SETTLED_ROWS', 12):
+                loaded, labels, projects = load_us_training_data(root)
+                self.assertEqual(projects.tolist(), ids['project id'].tolist())
+                self.assertEqual(labels.tolist(), ids.target.tolist())
+                self.assertEqual(len(loaded), 12)
+                ids['target'] = ids['target'].astype(float)
+                ids.iloc[0, 1] = 0.5
+                ids.to_csv(data / 'train_project_ids.csv', index=False)
+                with self.assertRaises(AssertionError):
+                    load_us_training_data(root)
+                ids.iloc[0, 1] = 0
+                ids.to_csv(data / 'train_project_ids.csv', index=False)
+                with self.assertRaisesRegex(AssertionError, 'disagree'):
+                    load_us_training_data(root)
+
+    def test_loader_missing_artifacts_raises(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'utils').mkdir()
+            (root / 'utils/preprocessing.py').touch()
+            with self.assertRaisesRegex(FileNotFoundError, 'Missing official'):
+                load_us_training_data(root)
 
     def test_cv_is_reproducible_and_stratified(self):
         left = list(development_cv().split(np.zeros(20), [0, 1] * 10))

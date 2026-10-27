@@ -62,6 +62,8 @@ def load_us_training_data(root=None):
 
     rows = clean.set_index("project id", drop=False).loc[train_ids["project id"]]
     rows = rows.reset_index(drop=True)
+    if not train_ids["target"].isin([0, 1]).all():
+        raise AssertionError("Training labels must be binary 0/1 before conversion")
     y = train_ids["target"].astype(int).reset_index(drop=True)
     status_y = rows["status"].eq("successful").astype(int)
     if not np.array_equal(status_y.to_numpy(), y.to_numpy()):
