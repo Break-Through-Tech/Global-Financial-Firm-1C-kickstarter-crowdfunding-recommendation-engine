@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -17,6 +18,34 @@ from utils.us_modeling import (
 
 
 class USModelingUtilityTests(unittest.TestCase):
+    @staticmethod
+    def synthetic_training_data():
+        X = pd.DataFrame({
+            "goal": np.arange(12, dtype=float) + 100,
+            "duration": [30.0, 45.0] * 6,
+            "category": ["Art", "Design"] * 6,
+            "subcategory": ["Print", "Tools"] * 6,
+            "location": ["Boston, MA", "Austin, TX"] * 6,
+        })
+        y = pd.Series([0, 1] * 6, name="target")
+        return X, y
+
+    @unittest.skipUnless(
+        all(
+            (
+                Path(__file__).resolve().parents[1]
+                / "data"
+                / "Processed-Data"
+                / "us_only"
+                / filename
+            ).is_file()
+            for filename in (
+                "DSI_kickstarterscrape_dataset_cleaned.csv",
+                "train_project_ids.csv",
+            )
+        ),
+        "official processed U.S. data unavailable; skipping artifact integration test",
+    )
     def test_official_training_membership_and_binary_labels(self):
         X, y, project_ids = load_us_training_data()
         self.assertEqual(len(X), EXPECTED_TRAIN_ROWS)
@@ -32,10 +61,16 @@ class USModelingUtilityTests(unittest.TestCase):
             "include_reward": False,
             "exclude_renamed": True,
         })
-        X, y, _ = load_us_training_data()
+        X, y = self.synthetic_training_data()
+        self.assertGreater(len(X), 0)
+        self.assertEqual(len(X), len(y))
+        self.assertEqual(set(y.unique()), {0, 1})
+        self.assertTrue({"goal", "duration", "category", "subcategory", "location"}.issubset(X.columns))
         pipe = conservative_pipeline(LogisticRegression(max_iter=100), "onehot")
-        pipe.fit(X.iloc[:100], y.iloc[:100])
-        self.assertTrue(np.isfinite(pipe.predict_proba(X.iloc[:20])).all())
+        pipe.fit(X, y)
+        probabilities = pipe.predict_proba(X.iloc[:4])
+        self.assertTrue(np.isfinite(probabilities).all())
+        self.assertEqual(probabilities.shape, (4, 2))
         transformed = pipe.named_steps["features"].transform(X.iloc[:2])
         self.assertNotIn("funded date", transformed.columns)
 
