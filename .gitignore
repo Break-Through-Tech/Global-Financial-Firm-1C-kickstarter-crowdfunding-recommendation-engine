@@ -26,3 +26,9 @@ data/Processed-Data/
 /docs/workflow_audit_2026-10-15.md
 # Fitted models and local validation metadata stay local pending sharing policy.
 /models/
+
+# Local reference repositories and downloaded archives
+reference/
+
+# Separate algorithm comparison environment
+.venv-model-comparison/
