@@ -7,4 +7,6 @@ scikit-learn
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
-joblib
+lightgbm
+xgboost
+catboost
