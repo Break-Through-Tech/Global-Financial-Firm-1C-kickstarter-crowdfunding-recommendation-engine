@@ -1,3 +1,4 @@
+import html
 import io
 import os
 import sys
@@ -109,10 +110,28 @@ def download_drive_file(service, file_id):
     return buffer.getvalue()
 
 
+def clean_raw_data(df):
+    df = df.copy()
+    for c in ["name", "category", "subcategory"]:
+        df[c] = df[c].astype(str).map(html.unescape)
+
+    df = df.drop_duplicates(subset="project id", keep="first")
+
+    df["end"] = pd.to_datetime(df["funded date"], format="mixed", utc=True)
+    df["launch"] = df["end"] - pd.to_timedelta(df["duration"], unit="D")
+
+    df = df[df["status"].isin(["successful", "failed"])].copy()
+    df["success"] = df["status"].eq("successful")
+
+    df = df[(df["goal"] > 0) & (df["duration"] > 0) & df["funded percentage"].notna()]
+    return df
+
+
 def load_csv_from_drive(
     service=None,
     folder_id=None,
     file_name=None,
+    clean=False,
 ):
     """
     Download and parse the raw CSV into a pandas DataFrame.
@@ -145,6 +164,9 @@ def load_csv_from_drive(
         encoding="utf-8",
         encoding_errors="replace",
     )
+
+    if clean:
+        df = clean_raw_data(df)
 
     return df
 
