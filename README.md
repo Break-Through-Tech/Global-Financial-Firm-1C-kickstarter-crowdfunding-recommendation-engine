@@ -85,6 +85,7 @@ Our existing [GitHub Actions workflow](.github/workflows/python-app.yml) runs Py
 |---|---|---|
 | Anna Sehgal | [@annasehgal](https://github.com/annasehgal) | Data handling, cleaning, preprocessing, validation, U.S. scope workflow, and project documentation |
 | Zasha Benites | [@zm-michelle](https://github.com/zm-michelle) | Feature engineering, EDA, visualization, and modeling collaboration |
+| nityavobugari18 | [@nityavobugari18](https://github.com/nityavobugari18) | |
 
 ## Data, license, and acknowledgements
 
