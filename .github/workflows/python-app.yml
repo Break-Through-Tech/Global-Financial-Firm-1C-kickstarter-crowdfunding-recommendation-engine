@@ -42,7 +42,8 @@ jobs:
           python -m pip install flake8
 
       - name: Check critical Python lint errors
-        run: flake8 utils tests --count --select=E9,F63,F7,F82 --show-source --statistics
+        run: flake8 utils tests --extend-exclude=.venv --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      - name: Run all unit tests
+      - name: Run unit tests and available local-data integration tests
+        # Integration tests explicitly skip absent private artifacts; other errors fail.
         run: python -m unittest discover -s tests -v
