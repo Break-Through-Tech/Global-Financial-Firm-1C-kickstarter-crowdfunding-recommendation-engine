@@ -17,6 +17,7 @@ data/*.csv
 data/*.zip
 *.parquet
 *.json
+!models/us_accuracy_decision.json
 *.pkl
 *.xlsx
 data/**/*.csv
@@ -24,11 +25,9 @@ data/**/*.zip
 data/Processed-Data/
 # Keep the original local workflow audit out of GitHub.
 /docs/workflow_audit_2026-10-15.md
-# Fitted models and local validation metadata stay local pending sharing policy.
-/models/
-
 # Local reference repositories and downloaded archives
 reference/
 
 # Separate algorithm comparison environment
 .venv-model-comparison/
+test-run/

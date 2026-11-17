@@ -1,0 +1,43 @@
+{
+  "accept_improvement": false,
+  "final_candidate": "original",
+  "final_threshold": 0.5,
+  "original_metrics": {
+    "accuracy": 0.6693264056411208,
+    "roc_auc": 0.7239421770258075,
+    "brier": 0.20958354373448698,
+    "tn": 6814,
+    "fp": 5415,
+    "fn": 3495,
+    "tp": 11221,
+    "failure_precision": 0.6609758463478513,
+    "failure_recall": 0.5572000981274021,
+    "failure_f1": 0.6046676723755435,
+    "failure_support": 12229.0,
+    "success_precision": 0.6745010819908632,
+    "success_recall": 0.7625033976624083,
+    "success_f1": 0.7158076039806073,
+    "success_support": 14716.0
+  },
+  "focused_metrics": {
+    "accuracy": 0.6693264056411208,
+    "roc_auc": 0.7239421770258075,
+    "brier": 0.20958354373448698,
+    "tn": 6814,
+    "fp": 5415,
+    "fn": 3495,
+    "tp": 11221,
+    "failure_precision": 0.6609758463478513,
+    "failure_recall": 0.5572000981274021,
+    "failure_f1": 0.6046676723755435,
+    "failure_support": 12229.0,
+    "success_precision": 0.6745010819908632,
+    "success_recall": 0.7625033976624083,
+    "success_f1": 0.7158076039806073,
+    "success_support": 14716.0
+  },
+  "minimum_accuracy_gain": 0.003,
+  "maximum_auc_loss": 0.002,
+  "maximum_failure_recall_loss": 0.01,
+  "limitation": "Restricted nested development comparison after prior tuning; promotion uses outer results and adds selection optimism. No significance claim from three overlapping folds."
+}
