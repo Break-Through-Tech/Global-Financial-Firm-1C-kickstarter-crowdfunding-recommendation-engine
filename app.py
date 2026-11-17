@@ -1,5 +1,7 @@
 
 import streamlit as st
+from pathlib import Path
+from utils.us_prediction import USPredictor
 
 # --------------------------------------------------
 # PAGE CONFIGURATION
@@ -11,6 +13,17 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --------------------------------------------------
+# LOAD TRAINED MODEL
+# --------------------------------------------------
+
+MODEL_PATH = Path(__file__).parent / "models" / "us_primary_model_v1.joblib"
+
+@st.cache_resource
+def load_predictor():
+    return USPredictor(MODEL_PATH)
+
 
 # --------------------------------------------------
 # CUSTOM STYLING
@@ -225,7 +238,7 @@ with st.form("campaign_form"):
 
 
 # --------------------------------------------------
-# FORM SUBMISSION
+# FORM SUBMISSION AND MODEL PREDICTION
 # --------------------------------------------------
 
 if submitted:
@@ -252,16 +265,10 @@ if submitted:
         metric1, metric2 = st.columns(2)
 
         with metric1:
-            st.metric(
-                "Funding Goal",
-                f"${goal:,.2f}"
-            )
+            st.metric("Funding Goal", f"${goal:,.2f}")
 
         with metric2:
-            st.metric(
-                "Campaign Duration",
-                f"{duration:.0f} days"
-            )
+            st.metric("Campaign Duration", f"{duration:.0f} days")
 
         st.markdown("#### Campaign Details")
 
@@ -277,11 +284,81 @@ if submitted:
             st.write("**Reward Levels:**", reward_levels)
             st.write("**Launch Date:**", launch)
 
-        st.info(
-            "The prediction engine will be connected after "
-            "the team's approved model and feature policy "
-            "are finalized. No prediction has been generated yet."
-        )
+        # Send only the five features required by the model.
+        campaign = {
+            "goal": goal,
+            "duration": duration,
+            "category": category.strip(),
+            "subcategory": subcategory.strip(),
+            "location": location.strip()
+        }
+
+        st.divider()
+        st.markdown("### Campaign Success Prediction")
+
+        try:
+            with st.spinner("Analyzing your campaign..."):
+
+                predictor = load_predictor()
+                result = predictor.predict(campaign)
+
+            probability = result["success_probability"]
+            classification = result["classification"]
+
+            prediction_col1, prediction_col2 = st.columns(2)
+
+            with prediction_col1:
+                st.metric(
+                    "Probability of Success",
+                    f"{probability:.2%}"
+                )
+
+            with prediction_col2:
+                st.metric(
+                    "Predicted Outcome",
+                    classification.capitalize()
+                )
+
+            st.markdown("#### Success Probability")
+            st.progress(probability)
+
+            if classification == "successful":
+                st.success(
+                    "The model predicts that this campaign "
+                    "is likely to succeed."
+                )
+            else:
+                st.warning(
+                    "The model predicts that this campaign "
+                    "is likely to fail."
+                )
+
+            st.caption(
+                f"Classification threshold: "
+                f"{result['threshold']:.0%}"
+            )
+
+            st.info(
+                "This prediction is generated using the team's "
+                "trained machine learning model and its five "
+                "approved input features. It is an estimate based "
+                "on historical campaign data, not a guarantee "
+                "of the actual campaign outcome."
+            )
+
+        except FileNotFoundError:
+            st.error(
+                "The trained model or its metadata file could "
+                "not be found. Check the models folder."
+            )
+
+        except ValueError as error:
+            st.error(f"Invalid campaign information: {error}")
+
+        except Exception as error:
+            st.error(
+                f"Unable to generate prediction: {error}"
+            )
 
 
 # --------------------------------------------------
@@ -293,9 +370,7 @@ st.divider()
 footer1, footer2 = st.columns(2)
 
 with footer1:
-    st.caption(
-        "Kickstarter Campaign Advisor | Team 1C"
-    )
+    st.caption("Kickstarter Campaign Advisor | Team 1C")
 
 with footer2:
     st.caption(
