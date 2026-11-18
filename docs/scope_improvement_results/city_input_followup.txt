@@ -1,0 +1,7 @@
+{
+  "artifact_sha256": "5206dcd826620b9e701a4bc06ee1b669a7385916ac3199dcea3fd839062b4e5e",
+  "case_normalization_probabilities_identical": true,
+  "unseen_city_log_frequency": 0.0,
+  "unseen_city_probability_finite": true,
+  "limitation": "Unseen-city fallback is operational, not validated prospective accuracy. Full city/state formatting policy still requires review."
+}

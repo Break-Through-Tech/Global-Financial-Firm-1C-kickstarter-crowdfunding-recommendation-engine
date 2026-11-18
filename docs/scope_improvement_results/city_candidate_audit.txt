@@ -1,0 +1,28 @@
+{
+  "artifact_sha256": "5206dcd826620b9e701a4bc06ee1b669a7385916ac3199dcea3fd839062b4e5e",
+  "validation_metrics": {
+    "accuracy": 0.6770458341065133,
+    "roc_auc": 0.7323284435815559,
+    "brier": 0.2067633444060498,
+    "tn": 6990.0,
+    "fp": 5239.0,
+    "fn": 3463.0,
+    "tp": 11253.0,
+    "failure_precision": 0.6687075480723237,
+    "failure_recall": 0.5715921170986998,
+    "failure_f1": 0.6163477647473767,
+    "failure_support": 12229.0,
+    "success_precision": 0.6823308270676691,
+    "success_recall": 0.7646779016036966,
+    "success_f1": 0.7211612407075109,
+    "success_support": 14716.0,
+    "fit_seconds": 0.3722768473283698,
+    "predict_seconds": 0.064250916664605
+  },
+  "sample_rows": 100,
+  "probability_difference_raw_vs_validated": 0.0,
+  "sample_cities_seen_in_training": 100,
+  "primary_class_mapping_valid": true,
+  "required_input": "Full listed City, ST. State-only input rejected for candidate.",
+  "promotion": "Not activated. Existing development gain is not independent test evidence."
+}

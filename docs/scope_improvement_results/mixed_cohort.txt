@@ -1,0 +1,15 @@
+{
+  "scope": "mixed",
+  "training_rows": 29288,
+  "ordered_training_ids_sha256": "4b865cc10285fd1ecf870bfcc73036f731f81582d5235a34eeb255f735f6abb7",
+  "inputs": [
+    "duration",
+    "category",
+    "subcategory",
+    "country_region"
+  ],
+  "class_counts": {
+    "0": 13257,
+    "1": 16031
+  }
+}
