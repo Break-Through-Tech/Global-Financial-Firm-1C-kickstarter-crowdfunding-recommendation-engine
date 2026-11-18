@@ -1,0 +1,2 @@
+Candidate saved/verified; exact serialization agreement on 26945 rows.
+Artifact SHA-256: 5206dcd826620b9e701a4bc06ee1b669a7385916ac3199dcea3fd839062b4e5e

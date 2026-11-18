@@ -1,0 +1,70 @@
+{
+  "environment": {
+    "python": "3.12.3",
+    "sklearn": "1.9.1",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "joblib": "1.6.0",
+    "xgboost": "3.4.1",
+    "catboost": "1.2.10",
+    "lightgbm": "4.7.0"
+  },
+  "training_rows": 26945,
+  "ordered_training_ids_sha256": "39973dc68ce86963f8ddd916ff5e23583e8afcaefbbe096b05be7d462260b82c",
+  "protected_artifacts": {
+    "/Users/annasehgal/State-Street-1C-kickstarter-crowdfunding-recommendation-engine/models/us_primary_model_v1.joblib": "243bb0d53ac7b456e6b636c424bc8d0d74dbd67f014d5f8f175b7d4226bd94b6",
+    "/Users/annasehgal/State-Street-1C-kickstarter-crowdfunding-recommendation-engine/models/us_primary_model_v1.metadata.json": "9c758a946c47aaa3d8a5fa2fc1289d1ab62ae9623e31905b3fd77d22d254f239",
+    "/Users/annasehgal/State-Street-1C-kickstarter-crowdfunding-recommendation-engine/models/us_candidate_v2.joblib": "5206dcd826620b9e701a4bc06ee1b669a7385916ac3199dcea3fd839062b4e5e",
+    "/Users/annasehgal/State-Street-1C-kickstarter-crowdfunding-recommendation-engine/models/us_candidate_v2.metadata.json": "c09cc3b40dce67c54f8312b7e0f331747b3cf8b3d99ba5c90fe007c08500f39a"
+  },
+  "feature_sets": {
+    "conservative": [],
+    "city": [
+      "city_frequency"
+    ],
+    "reward_count_exploratory": [
+      "reward_count"
+    ],
+    "reward_ladder_exploratory": [
+      "reward_count",
+      "reward_amounts",
+      "reward_relative"
+    ]
+  },
+  "settings": {
+    "HGB": [
+      {}
+    ],
+    "XGBoost": [
+      {
+        "max_depth": 3,
+        "n_estimators": 250
+      },
+      {
+        "max_depth": 5,
+        "n_estimators": 350
+      }
+    ],
+    "CatBoost": [
+      {
+        "depth": 4,
+        "iterations": 250
+      },
+      {
+        "depth": 6,
+        "iterations": 350
+      }
+    ],
+    "LightGBM": [
+      {
+        "num_leaves": 15,
+        "n_estimators": 250
+      },
+      {
+        "num_leaves": 31,
+        "n_estimators": 350
+      }
+    ]
+  }
+}

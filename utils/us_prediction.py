@@ -1,10 +1,13 @@
-"""Minimal saved-model interface for the future Streamlit app."""
+"""Saved-model interface used by the Streamlit app."""
+import hashlib
 import json
+import platform
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 
 from utils.us_scope import US_STATE_CODES
 from utils.us_modeling import repository_root
@@ -33,6 +36,8 @@ def campaign_frame(campaign):
     state = row['location'].split(',')[-1].strip().upper()
     if state not in US_STATE_CODES or (',' not in row['location'] and row['location'].upper() != state):
         raise ValueError('location must be a supported U.S. state/DC code or city, ST')
+    if ',' in row['location'] and not row['location'].rsplit(',', 1)[0].strip():
+        raise ValueError('location must include a city before the state suffix')
     row['location'] = f'State, {state}' if ',' not in row['location'] else row['location'].rsplit(',', 1)[0] + f', {state}'
     return pd.DataFrame([row], columns=INPUTS)
 
@@ -62,3 +67,37 @@ def predict_campaign(campaign, model_path=None):
     if model_path is None:
         model_path = repository_root() / 'models/us_primary_model_v1.joblib'
     return USPredictor(model_path).predict(campaign)
+
+
+PRIMARY_SHA256 = '243bb0d53ac7b456e6b636c424bc8d0d74dbd67f014d5f8f175b7d4226bd94b6'
+
+
+def load_primary_predictor(model_path):
+    """Verify the frozen public-app contract before loading trusted pickle bytes."""
+    path = Path(model_path)
+    metadata = json.loads(path.with_suffix('.metadata.json').read_text())
+    if hashlib.sha256(path.read_bytes()).hexdigest() != PRIMARY_SHA256:
+        raise ValueError('Frozen U.S. model integrity check failed')
+    if (metadata.get('artifact_sha256') != PRIMARY_SHA256
+            or metadata.get('model_version') != 'us_primary_model_v1'
+            or metadata.get('input_order') != list(INPUTS)
+            or metadata.get('threshold') != 0.5
+            or metadata.get('estimator_class') != 'HistGradientBoostingClassifier'):
+        raise ValueError('Frozen U.S. model metadata does not match')
+    versions = dict(python=platform.python_version(), sklearn=sklearn.__version__,
+                    numpy=np.__version__, pandas=pd.__version__, joblib=joblib.__version__)
+    for name, version in versions.items():
+        expected = metadata['environment'][name]
+        if name == 'python':
+            version, expected = version.split('.')[:2], expected.split('.')[:2]
+        if version != expected:
+            raise ValueError(f'Unsupported {name} version for the frozen model')
+    predictor = USPredictor(path)
+    steps = predictor.pipeline.named_steps
+    if (list(steps) != ['features', 'prep', 'model']
+            or type(steps['model']).__name__ != 'HistGradientBoostingClassifier'
+            or list(steps['prep'].get_feature_names_out()) != metadata['preprocessing_parameters']['transformed_features']
+            or any(steps['features'].get_params()[name] != value
+                   for name, value in metadata['conservative_policy'].items())):
+        raise ValueError('Unexpected frozen pipeline schema')
+    return predictor

@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "model_id": "us_primary_model_v1",
+  "artifact_sha256": "243bb0d53ac7b456e6b636c424bc8d0d74dbd67f014d5f8f175b7d4226bd94b6",
+  "training_ids_sha256": "39973dc68ce86963f8ddd916ff5e23583e8afcaefbbe096b05be7d462260b82c",
+  "cohort": "26,945 official U.S. listed-state/DC training campaigns",
+  "example_query_training_id": 1157894847,
+  "inputs": {
+    "goal": 28000.0,
+    "duration": 67.96,
+    "category": "Film & Video",
+    "subcategory": "Short Film",
+    "location": "Heber, UT"
+  },
+  "prediction": {
+    "success_probability": 0.24111530648667487,
+    "predicted_class": 0,
+    "classification": "failed",
+    "threshold": 0.5
+  },
+  "benchmarks": {
+    "scope": "subcategory; all supported U.S. listed states",
+    "n": 2466,
+    "available": true,
+    "units": "Historical goal units assumed comparable within U.S.; duration in fractional days",
+    "goal": {
+      "q25": 1250.0,
+      "median": 3000.0,
+      "q75": 6000.0
+    },
+    "duration": {
+      "q25": 29.96,
+      "median": 30.04,
+      "q75": 45.0
+    }
+  },
+  "retrieval": {
+    "scope": "subcategory; all supported U.S. listed states",
+    "n_eligible": 2466,
+    "neighbors": [
+      {
+        "project_id": 2029073725,
+        "distance": 0.21484366370394373,
+        "goal": 20000.0,
+        "duration": 67.8
+      },
+      {
+        "project_id": 903011123,
+        "distance": 0.2524439885010892,
+        "goal": 20000.0,
+        "duration": 65.96
+      },
+      {
+        "project_id": 575962072,
+        "distance": 0.30642485041541984,
+        "goal": 20000.0,
+        "duration": 64.67
+      },
+      {
+        "project_id": 1805454535,
+        "distance": 0.3700304051860221,
+        "goal": 17000.0,
+        "duration": 70.8
+      },
+      {
+        "project_id": 12448043,
+        "distance": 0.4143354860669381,
+        "goal": 19000.0,
+        "duration": 62.96
+      }
+    ],
+    "distance_features": [
+      "log1p(goal)",
+      "duration"
+    ],
+    "scaling": "training-group median/IQR"
+  },
+  "scenario": {
+    "original_inputs": {
+      "goal": 28000.0,
+      "duration": 67.96,
+      "category": "Film & Video",
+      "subcategory": "Short Film",
+      "location": "Heber, UT"
+    },
+    "scenario_inputs": {
+      "goal": 33600.0,
+      "duration": 67.96,
+      "category": "Film & Video",
+      "subcategory": "Short Film",
+      "location": "Heber, UT"
+    },
+    "original_prediction": {
+      "success_probability": 0.24111530648667487,
+      "predicted_class": 0,
+      "classification": "failed",
+      "threshold": 0.5
+    },
+    "scenario_prediction": {
+      "success_probability": 0.19678804531251606,
+      "predicted_class": 0,
+      "classification": "failed",
+      "threshold": 0.5
+    },
+    "probability_difference": -0.044327261174158805,
+    "interpretation": "Model response to substituted inputs, not a causal effect"
+  },
+  "scenario_support": {
+    "goal_within_training_range": true,
+    "duration_within_training_range": true
+  },
+  "limitations": [
+    "Descriptive training example, not retrieval-quality validation",
+    "Self ID excluded; outcomes never used in distance or benchmarks",
+    "Historical goal units and duration semantics remain assumptions",
+    "Location is a listed proxy; no state/country similarity asserted",
+    "Scenario may extrapolate; no causal or optimization claim",
+    "No LLM invoked; future explanations must match supplied facts"
+  ]
+}
