@@ -89,9 +89,19 @@ def load_primary_predictor(model_path):
     for name, version in versions.items():
         expected = metadata['environment'][name]
         if name == 'python':
-            version, expected = version.split('.')[:2], expected.split('.')[:2]
+            required_python = '.'.join(expected.split('.')[:2])
+            if version.split('.')[:2] != expected.split('.')[:2]:
+                raise ValueError(
+                    f'The server is running Python {version}; the frozen model requires '
+                    f'Python {required_python}. In Streamlit Community Cloud, recreate '
+                    f'the deployment with Python {required_python} selected in Advanced settings.'
+                )
+            continue
         if version != expected:
-            raise ValueError(f'Unsupported {name} version for the frozen model')
+            raise ValueError(
+                f'The server has {name} {version}; the frozen model requires {expected}. '
+                'Check that the deployed branch uses the pinned requirements.txt.'
+            )
     predictor = USPredictor(path)
     steps = predictor.pipeline.named_steps
     if (list(steps) != ['features', 'prep', 'model']
