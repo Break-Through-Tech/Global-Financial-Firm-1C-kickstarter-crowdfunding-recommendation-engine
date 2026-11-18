@@ -1,0 +1,8 @@
+# Additional packages for .venv-model-comparison only.
+# Reuse the reviewed base through reviewed_base.pth; do not install into .venv.
+-c requirements-reviewed.txt
+xgboost==3.4.1
+catboost==1.2.10
+lightgbm==4.7.0
+graphviz==0.21
+plotly==7.1.0

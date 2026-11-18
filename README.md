@@ -1,108 +1,70 @@
-# Kickstarter Crowdfunding Recommendation Engine — Team 1C
+# Kickstarter Crowdfunding Recommendation Engine: Team 1C
 
-**Break Through Tech AI Studio · Fall 2026 · State Street challenge**
+Break Through Tech AI Studio, Fall 2026, State Street challenge. This project does not use State Street data. See [the challenge brief](Challenge-Project-Overview.md) and the existing [custom license](LICENSE).
 
-We are developing a machine-learning workflow to predict whether a Kickstarter campaign is likely to succeed using information that could be available at or near launch. We also aim to turn model findings into responsible, understandable guidance for creators. **This project does not use State Street data.** See the [challenge brief](Challenge-Project-Overview.md).
+The current demonstration uses the frozen U.S. HistGradientBoosting v1 pipeline with threshold 0.5. Its inputs are goal, duration, category, subcategory and listed location. No additional tuning is needed for the dashboard.
 
-**Current stage:** U.S.-candidate data exploration, conservative feature engineering, and baseline model comparisons are complete. Hyperparameter tuning, final held-out testing, interpretability, and the recommendation prototype are still in progress.
-
-## Current results — U.S. candidate cohort
-
-| Cohort | Campaigns |
+| Development validation | Result |
 |---|---:|
-| Cleaned records across all campaign statuses | 45,815 |
-| Candidate U.S. records identified by location suffix | 42,175 |
-| Successful/failed U.S. modeling candidates | **38,420** |
-| Training campaigns | **26,945** |
-| Reserved test campaigns | **11,475** |
+| Accuracy | 66.93% |
+| ROC-AUC | 0.7239 |
+| Failure recall | 55.72% |
 
-The U.S. subset is **provisional**. The dataset does not include a verified country column: the filter identifies locations ending with a U.S. state or DC abbreviation. It may omit legitimate U.S. records or include ambiguous matches. See [the scope and split documentation](docs/us_only_workflow.md). The U.S. subset preserves membership in the original global training/test partition.
+These are training-only restricted nested comparison results, informed by prior tuning, on 26,945 official U.S. training campaigns. They are not independent test results. The 11,475 reserved campaigns include 1,486 IDs exposed during historical development. No new reserved evaluation was performed. Probabilities are uncalibrated; source launch snapshots, duration meaning and goal currency remain unverified. Listed state/DC is a geographic proxy. See [final selection](docs/final_model_selection.md) for complete provenance and preserved historical results.
 
-### Baseline modeling: five-fold CV on training data only
+The city-frequency HGB v2 candidate (67.70% development accuracy) remains experimental. International and mixed models are unavailable in the dashboard because input, currency and separate evaluation requirements are unresolved.
 
-| Model | Mean ROC-AUC | Mean accuracy | Mean F1 |
-|---|---:|---:|---:|
-| HistGradientBoosting | **0.7235** | **0.6684** | **0.7156** |
-| Logistic Regression | 0.7199 | 0.6684 | 0.7111 |
-| Random Forest | 0.7117 | 0.6583 | 0.7036 |
-| KNN | 0.6990 | 0.6531 | 0.7073 |
-| Decision Tree | 0.6867 | 0.6491 | 0.6958 |
-| Dummy (majority) | 0.5000 | 0.5461 | 0.7065 |
+## Run the dashboard
 
-These are **training-only cross-validation results**, refreshed in the reviewed October 15 environment. KNN accuracy/F1 changed from 0.6527/0.7069 to 0.6531/0.7073; all baseline AUC values match to four decimals. These are not final test-set results. The majority-class dummy's F1 is relatively high because it predicts the positive class for every row; use the complete set of metrics to compare models.
-
-An additional **training-only feature experiment** found that four optional launch-time candidate features changed Logistic Regression ROC-AUC from **0.7199 to 0.7235**, while HistGradientBoosting changed from **0.7235 to 0.7232**. The differences are small and do not justify a claim of superiority. See [`05a_safe_feature_check.ipynb`](notebooks/us_only/05a_safe_feature_check.ipynb).
-
-## Repository layout and study order
-
-| Location | Purpose |
-|---|---|
-| `notebooks/00_load_data.ipynb` through `05b_pre_tuning_validation.ipynb` | Original broad-cohort data processing, feature work, baseline modeling, and pre-tuning validation |
-| [`notebooks/us_only/01–05`](notebooks/us_only/) | Separate U.S.-candidate audit, cleaning, preprocessing, feature engineering, and baseline modeling |
-| [`notebooks/us_only/04b_us_eda.ipynb`](notebooks/us_only/04b_us_eda.ipynb) | Additional U.S.-specific EDA with uncertainty intervals |
-| [`notebooks/us_only/05a_safe_feature_check.ipynb`](notebooks/us_only/05a_safe_feature_check.ipynb) | Training-only feature comparison, without using held-out labels |
-| `utils/` | Reusable feature engineering, filtering, Google Drive, and preprocessing helpers |
-| `tests/` | Automated scope, feature, and target-encoding regression tests |
-| [`docs/`](docs/) | Feature-policy, data-scope, and methodological decisions |
-
-The **global notebooks remain separate and unchanged by the U.S.-only workflow**. Do not compare the global and U.S.-candidate results as if their feature sets or populations were identical.
-
-## Reproduce the workflow
-
-From the repository root:
+The actual entrypoint is `app.py`. Use Python 3.12 (the model was created with 3.12.3):
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -r requirements-reviewed.txt
-python3 -m unittest discover -s tests -v
+python3.12 -m venv .venv-dashboard
+source .venv-dashboard/bin/activate
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
-To run notebooks, install Jupyter if needed (`python3 -m pip install notebook`) and start it with `python3 -m notebook`.
+The runtime pins match the frozen model: scikit-learn 1.9.1, NumPy 2.5.3, pandas 3.0.5 and joblib 1.6.0, with Streamlit 1.67.0. Research notebooks use `requirements-reviewed.txt`; optional algorithm comparisons use `requirements-model-comparison.txt` when available in your checkout. The public app needs no Drive access, API keys, datasets or LLM.
 
-**Data is not committed to GitHub.** Retrieve the Kaggle Kickstarter dataset or the team's shared processed files according to [`data/README.md`](data/README.md). The U.S.-only notebooks require the cleaned broad-cohort CSV and saved global train/test project-ID files. Follow [`docs/us_only_workflow.md`](docs/us_only_workflow.md) for prerequisites and run order; then run optional `04b` and `05a` as explained in [`docs/us_feature_extension.md`](docs/us_feature_extension.md).
+Supply both `models/us_primary_model_v1.joblib` and its sibling `us_primary_model_v1.metadata.json` from the reviewed team artifact source. The loader checks the model hash, metadata identity, threshold, input order, runtime, class order and pipeline structure before serving results. Missing or incompatible artifacts make prediction unavailable; startup never retrains.
 
-Our existing [GitHub Actions workflow](.github/workflows/python-app.yml) runs Python unit tests and critical lint checks on relevant pushes and pull requests. It **does not** execute notebooks or train models; those require the separately managed dataset.
+Frozen SHA-256:
 
-## Methodological safeguards and limitations
+```text
+243bb0d53ac7b456e6b636c424bc8d0d74dbd67f014d5f8f175b7d4226bd94b6
+```
 
-- Candidate predictions are intended for **campaign launch**. The conservative U.S. baseline excludes unverified `funded date`-derived timing, title flags, `renamed`, and scraped reward-level features.
-- Learned feature statistics and categorical encodings are fitted inside training folds during cross-validation. The original target encoder was separately reviewed and tested for training/inference index collisions; see [`docs/model_validation.md`](docs/model_validation.md).
-- Parth Rana confirmed U.S. primary scope. State/DC suffixes are a geographic proxy, not verified registration country. Even retained goal, duration, category and location assume historical availability around launch.
-- Feature associations are **not causal effects**. Recommendations must not imply that changing a funding goal, category, or reward automatically changes a campaign's outcome.
-- Historical raw EDA/model training included 1,486 current U.S. reserved IDs (1,630 combined; 84 international). Current partitions are disjoint, but the holdout is historically exposed. No final scoring/publication until Anna and Zasha agree on the protocol, ideally with advisor input. See [evaluation decisions](docs/evaluation_decisions.md).
+Enter positive finite goals/durations, exact category names such as Music / Rock, and `TX` or `Austin, TX`. Fractional durations remain supported. Unseen category/subcategory strings use fitted training fallbacks; pairs are not validated. The app shows only the model estimate and its limitations.
 
-## Next steps
+## Deployment and recommendations
 
-1. Use the frozen conservative U.S. feature policy; review the [06 handoff](docs/06_handoff.md) together.
-2. Tune HistGradientBoosting and Logistic Regression (optionally Random Forest) and select the final model using training-only validation in `06`.
-3. Agree on the final-evaluation protocol before scoring the historically exposed reserved set; seek independent external/prospective evidence if available.
-4. Complete interpretation/error analysis in `07`, then implement the recommendation prototype.
+See [the integration and deployment handoff](docs/streamlit_integration_handoff.md) before deploying to Streamlit Community Cloud. Choose the reviewed branch, `app.py`, and Python 3.12. Root `requirements.txt` supplies the runtime. Artifact permissions and a clean host build must be verified first.
+
+Important: PR #56 already added both joblib models to public Git history. Ignore rules do not untrack them. This review does not publish or remove either model. Confirm publication permission with the team. A versioned, approved GitHub release asset with the exact hash is the preferred future distribution method; protected storage is appropriate if redistribution is restricted. No download or startup training is implemented.
+
+Historical category benchmarks, similar-campaign retrieval, and goal/duration scenarios exist in local research work, not in this dashboard. Their outputs must remain labeled historical comparisons or model responses to substituted inputs. They do not establish causal improvements. Local LLM summaries remain a plan; an LLM must never invent probabilities, statistics or model explanations.
+
+## Repository and verification
+
+`utils/us_prediction.py` is the saved-model interface. `utils/preprocessing.py` contains the serialized feature and preprocessing classes. `utils/us_modeling.py` reconstructs official training membership. `models/train_and_predict.py` is Zasha's separate experimental CatBoost workflow, not the selected HGB interface. Do not import its training script into Streamlit. Its limitations and a consolidation proposal are in the handoff.
+
+The global and international notebooks remain historical/secondary work. Data is not required for dashboard prediction. See [data instructions](data/README.md), [U.S. workflow](docs/us_only_workflow.md), [environment guidance](docs/environment_reproducibility.md), and [reserved evaluation protocol](docs/us_reserved_test_protocol.md). Do not recreate splits or refit frozen artifacts while preparing deployment.
+
+```bash
+python -m pip install flake8
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m unittest discover -s tests -v
+python -m flake8 app.py utils tests models --extend-exclude=.venv --count --select=E9,F63,F7,F82 --show-source --statistics
+```
+
+Tests use synthetic inputs where possible. Real artifact/UI checks explicitly skip if their dependencies are absent. The processed-data integration test skips absent private data. CI runs tests and critical lint without training notebooks.
 
 ## Team
 
 | Contributor | GitHub | Work to date |
 |---|---|---|
 | Anna Sehgal | [@annasehgal](https://github.com/annasehgal) | Data handling, cleaning, preprocessing, validation, U.S. scope workflow, and project documentation |
-| Zasha Benites | [@zm-michelle](https://github.com/zm-michelle) | Feature engineering, EDA, visualization, and modeling collaboration |
-| nityavobugari18 | [@nityavobugari18](https://github.com/nityavobugari18) | |
+| Zasha Benites | [@zm-michelle](https://github.com/zm-michelle) | Feature engineering, EDA, visualization, modeling collaboration, online training and prediction workflow |
+| Nitya Vobugari | [@nityavobugari18](https://github.com/nityavobugari18) | Initial Streamlit campaign advisor interface and saved U.S. model integration |
 
-## Data, license, and acknowledgements
-
-- **Source:** [Kaggle Kickstarter Projects dataset](https://www.kaggle.com/parienza/kickstarter). Original dataset and third-party materials have their own terms; no raw or processed data is distributed with this release.
-- **License:** See the repository's existing [custom `LICENSE`](LICENSE). Do not assume this is an MIT-licensed project.
-- **Acknowledgements:** Break Through Tech AI Studio, State Street challenge sponsors, Challenge Advisor, and team collaborators.
-
-Release notes for the baseline milestone are in [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
-
-The active training-only run order is U.S. 04 → 04b → 05 → optional 05a;
-international 04 → 05 is secondary. Combined raw 01/original 05 are historical;
-V2/V3 results predate corrected encoder behavior, and V3 top-12 selection before
-CV is exploratory. Combined 05b is a current-code diagnostic, not the primary
-conservative model. Historical outputs are preserved. In historical combined 04
-heatmaps, low-support cells remain colored even where percentages are omitted;
-do not interpret them as masked or sufficiently supported.
-
-Use [reviewed environment/artifact guidance](docs/environment_reproducibility.md).
-The Drive helper uploads top-level processed files only; cohort subdirectories
-need separate approved sharing/restoration. Do not recreate official splits.
+Source: [Kaggle Kickstarter Projects](https://www.kaggle.com/parienza/kickstarter). Dataset and third-party materials have their own terms. Acknowledgements: Break Through Tech AI Studio, State Street challenge sponsors, Challenge Advisor, and team collaborators. [Baseline release notes](docs/releases/v0.1.0.md) preserve the earlier milestone.

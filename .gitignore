@@ -31,3 +31,11 @@ reference/
 # Separate algorithm comparison environment
 .venv-model-comparison/
 test-run/
+
+# Local deployment credentials and future model artifacts
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.joblib
+!models/us_primary_model_v1.metadata.json
+.venv-dashboard/

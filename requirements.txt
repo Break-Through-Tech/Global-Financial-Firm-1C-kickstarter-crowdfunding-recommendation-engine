@@ -1,13 +1,7 @@
-python-dotenv
-flask
-matplotlib
-numpy
-pandas
-scikit-learn
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
-lightgbm
-xgboost
-catboost
-streamlit
+# Public dashboard runtime, Python 3.12. Research notebooks use requirements-reviewed.txt.
+streamlit==1.67.0
+scikit-learn==1.9.1
+numpy==2.5.3
+pandas==3.0.5
+scipy==1.18.1
+joblib==1.6.0

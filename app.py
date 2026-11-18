@@ -1,7 +1,7 @@
 
 import streamlit as st
 from pathlib import Path
-from utils.us_prediction import USPredictor
+from utils.us_prediction import load_primary_predictor, campaign_frame, PRIMARY_SHA256
 
 # --------------------------------------------------
 # PAGE CONFIGURATION
@@ -21,8 +21,8 @@ st.set_page_config(
 MODEL_PATH = Path(__file__).parent / "models" / "us_primary_model_v1.joblib"
 
 @st.cache_resource
-def load_predictor():
-    return USPredictor(MODEL_PATH)
+def load_predictor(model_hash):
+    return load_primary_predictor(MODEL_PATH)
 
 
 # --------------------------------------------------
@@ -121,10 +121,9 @@ with st.sidebar:
 
     st.divider()
 
-    st.markdown("**NAVIGATION**")
-    st.markdown("🏠 Campaign Predictor")
-    st.markdown("📊 Campaign Insights")
-    st.markdown("ℹ️ About the Project")
+    st.markdown("**AVAILABLE MODE**")
+    st.markdown("U.S. campaign predictor: HGB v1")
+    st.caption("International and mixed modes are unavailable pending validation.")
 
     st.divider()
 
@@ -175,6 +174,19 @@ st.write(
     "a success prediction."
 )
 
+st.caption(
+    "Use exact training category names, such as Music / Rock or Art / Painting. "
+    "Unseen category and subcategory values use training-fitted fallbacks; "
+    "category pairs are not validated. Location accepts ST or City, ST."
+)
+st.info(
+    "Development validation: accuracy 66.93%, ROC-AUC 0.7239, failure recall 55.72%. "
+    "Historical 2009–2012 data; probabilities are uncalibrated. Location is a state/DC proxy. "
+    "Launch snapshots, duration meaning and goal currency are unverified. The reserved set "
+    "has historical exposure; these are not independent test results. "
+    "Historical comparisons, scenarios and LLM advice are not available in this dashboard."
+)
+
 with st.form("campaign_form"):
 
     col1, col2 = st.columns(2)
@@ -183,7 +195,7 @@ with st.form("campaign_form"):
         st.markdown("#### Basic Details")
 
         name = st.text_input(
-            "Campaign Name",
+            "Campaign Name (optional, not used by model)",
             placeholder="e.g. Independent Music Album"
         )
 
@@ -219,15 +231,6 @@ with st.form("campaign_form"):
             step=1.0
         )
 
-        reward_levels = st.text_input(
-            "Reward Levels",
-            placeholder="$10,$25,$50,$100"
-        )
-
-        launch = st.date_input(
-            "Expected Launch Date"
-        )
-
     st.markdown("---")
 
     submitted = st.form_submit_button(
@@ -244,11 +247,9 @@ with st.form("campaign_form"):
 if submitted:
 
     if not all([
-        name.strip(),
         category.strip(),
         subcategory.strip(),
-        location.strip(),
-        reward_levels.strip()
+        location.strip()
     ]):
 
         st.error(
@@ -268,21 +269,17 @@ if submitted:
             st.metric("Funding Goal", f"${goal:,.2f}")
 
         with metric2:
-            st.metric("Campaign Duration", f"{duration:.0f} days")
+            st.metric("Campaign Duration", f"{duration:g} days")
 
         st.markdown("#### Campaign Details")
 
-        summary1, summary2 = st.columns(2)
+        summary1, = st.columns(1)
 
         with summary1:
             st.write("**Campaign:**", name)
             st.write("**Category:**", category)
             st.write("**Subcategory:**", subcategory)
             st.write("**Location:**", location)
-
-        with summary2:
-            st.write("**Reward Levels:**", reward_levels)
-            st.write("**Launch Date:**", launch)
 
         # Send only the five features required by the model.
         campaign = {
@@ -299,7 +296,8 @@ if submitted:
         try:
             with st.spinner("Analyzing your campaign..."):
 
-                predictor = load_predictor()
+                campaign_frame(campaign)
+                predictor = load_predictor(PRIMARY_SHA256)
                 result = predictor.predict(campaign)
 
             probability = result["success_probability"]
@@ -353,12 +351,10 @@ if submitted:
             )
 
         except ValueError as error:
-            st.error(f"Invalid campaign information: {error}")
+            st.error(f"Campaign or model validation failed: {error}")
 
-        except Exception as error:
-            st.error(
-                f"Unable to generate prediction: {error}"
-            )
+        except Exception:
+            st.error("Prediction unavailable. Ask the team to check the model and runtime.")
 
 
 # --------------------------------------------------
