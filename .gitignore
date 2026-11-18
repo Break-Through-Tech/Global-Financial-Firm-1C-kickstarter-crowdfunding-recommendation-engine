@@ -38,4 +38,9 @@ test-run/
 .streamlit/secrets.toml
 *.joblib
 !models/us_primary_model_v1.metadata.json
+# Separate experimental historical baselines, eligible for team review before publication.
+!models/international_historical_v1.joblib
+!models/international_historical_v1.metadata.json
+!models/mixed_historical_v1.joblib
+!models/mixed_historical_v1.metadata.json
 .venv-dashboard/

@@ -2,6 +2,8 @@
 import streamlit as st
 from pathlib import Path
 from utils.us_prediction import load_primary_predictor, campaign_frame, PRIMARY_SHA256
+from utils.historical_prediction import (MODEL_HASHES, historical_campaign_frame,
+                                         load_historical_predictor, predict_historical)
 
 # --------------------------------------------------
 # PAGE CONFIGURATION
@@ -23,6 +25,12 @@ MODEL_PATH = Path(__file__).parent / "models" / "us_primary_model_v1.joblib"
 @st.cache_resource
 def load_predictor(model_hash):
     return load_primary_predictor(MODEL_PATH)
+
+
+@st.cache_resource
+def load_scope_predictor(scope, artifact_hash):
+    path = Path(__file__).parent / 'models' / f'{scope}_historical_v1.joblib'
+    return load_historical_predictor(path, scope)
 
 
 # --------------------------------------------------
@@ -136,8 +144,8 @@ with st.sidebar:
 
     st.divider()
 
-    mode = st.radio("View", ["U.S. prediction", "International research", "Mixed cohort research"])
-    st.caption("U.S. predictions use HGB v1. Research views show recorded cohort evidence.")
+    mode = st.radio("Prediction mode", ["U.S. prediction", "International (experimental)", "Mixed (experimental)"])
+    st.caption("International and mixed estimates use historical listed locations, not registration country.")
 
     st.divider()
 
@@ -153,6 +161,9 @@ with st.sidebar:
         "campaign planning decisions."
     )
 
+
+scope = {"U.S. prediction": None, "International (experimental)": "international",
+         "Mixed (experimental)": "mixed"}[mode]
 
 # --------------------------------------------------
 # MAIN HEADER
@@ -173,83 +184,6 @@ st.markdown(
 
 st.divider()
 
-if mode != "U.S. prediction":
-    st.subheader(mode)
-    st.info(
-        "Historical research summary. This view does not generate a campaign prediction. "
-        "Each cohort has different coverage and evaluation; scores are not a head-to-head comparison."
-    )
-
-    if mode == "International research":
-        st.write(
-            "This cohort includes explicit named non-U.S. locations, such as Berlin, Germany "
-            "or Toronto, Canada. Unknown locations and U.S. territories are excluded. "
-            "Listed location does not establish campaign registration country."
-        )
-        st.metric("Official training campaigns", "1,427")
-        st.markdown("#### Recorded training-validation results")
-        st.caption(
-            "Five-fold stratified training CV with fold-fitted conservative features and one-hot encoding. "
-            "These are saved baseline results, not a newly evaluated or deployed international model."
-        )
-        st.table([
-            {"Model": "Random Forest", "Accuracy": "65.73%", "ROC-AUC": "0.6685"},
-            {"Model": "Decision Tree", "Accuracy": "65.03%", "ROC-AUC": "0.6584"},
-            {"Model": "Logistic Regression", "Accuracy": "64.19%", "ROC-AUC": "0.6573"},
-            {"Model": "KNN", "Accuracy": "65.03%", "ROC-AUC": "0.6510"},
-            {"Model": "HistGradientBoosting", "Accuracy": "61.60%", "ROC-AUC": "0.6405"},
-            {"Model": "Dummy baseline", "Accuracy": "60.97%", "ROC-AUC": "0.5000"},
-        ])
-        st.warning(
-            "Coverage is sparse: 113 of 125 training regions have fewer than 25 campaigns. "
-            "Currency comparability remains unresolved, including within-country fallbacks. "
-            "The reserved cohort has historical exposure. No independent test result is shown."
-        )
-        st.markdown(
-            "[Baseline notebook](https://github.com/Break-Through-Tech/"
-            "Global-Financial-Firm-1C-kickstarter-crowdfunding-recommendation-engine/"
-            "blob/main/notebooks/international_only/05_modeling.ipynb) · "
-            "[Cohort documentation](https://github.com/Break-Through-Tech/"
-            "Global-Financial-Firm-1C-kickstarter-crowdfunding-recommendation-engine/"
-            "blob/main/docs/international_only_workflow.md)"
-        )
-    else:
-        st.write(
-            "The mixed cohort is the original combined dataset. It includes the U.S. subset, "
-            "named non-U.S. locations, and other or unresolved locations. "
-            "It is not a separate population from the U.S. or international cohorts."
-        )
-        st.metric("Official training campaigns", "29,288")
-        st.table([
-            {"Training subset": "U.S. state/DC proxy", "Campaigns": 26945},
-            {"Training subset": "Explicit named non-U.S.", "Campaigns": 1427},
-            {"Training subset": "Other or unresolved locations", "Campaigns": 916},
-        ])
-        st.warning(
-            "There is no approved saved mixed-cohort predictor. Global funding-goal currency "
-            "units remain unverified. Earlier combined model scores used different feature "
-            "policies and preprocessing, so they are not presented as deployable performance."
-        )
-        st.write(
-            "Zasha's online workflow is a separate CatBoost research pipeline. It requires "
-            "title, rewards and launch information in addition to the five U.S. inputs, "
-            "and does not establish a validated mixed-cohort model."
-        )
-        st.markdown(
-            "[Cohort and pipeline review](https://github.com/Break-Through-Tech/"
-            "Global-Financial-Firm-1C-kickstarter-crowdfunding-recommendation-engine/"
-            "blob/main/docs/launch_pipeline_review.md)"
-        )
-
-    st.caption(
-        "Enabling predictions requires a separately saved and evaluated pipeline, "
-        "verified funding units, supported input rules, and model integrity metadata. "
-        "No model is trained or loaded by these research views."
-    )
-    st.caption("Kickstarter Campaign Advisor | Team 1C")
-    st.stop()
-
-
 # --------------------------------------------------
 # CAMPAIGN INPUT SECTION
 # --------------------------------------------------
@@ -264,18 +198,31 @@ st.write(
     "a success prediction."
 )
 
-st.caption(
-    "Use exact training category names, such as Music / Rock or Art / Painting. "
-    "Unseen category and subcategory values use training-fitted fallbacks; "
-    "category pairs are not validated. Location accepts ST or City, ST."
-)
-st.info(
-    "Development validation: accuracy 66.93%, ROC-AUC 0.7239, failure recall 55.72%. "
-    "Historical 2009–2012 data; probabilities are uncalibrated. Location is a state/DC proxy. "
-    "Launch snapshots, duration meaning and goal currency are unverified. The reserved set "
-    "has historical exposure; these are not independent test results. "
-    "Campaign-specific benchmarks, scenarios and LLM advice are not available in this dashboard."
-)
+if scope is None:
+    st.caption(
+        "Use exact training category names, such as Music / Rock or Art / Painting. "
+        "Unseen category and subcategory values use training-fitted fallbacks; "
+        "category pairs are not validated. Location accepts ST or City, ST."
+    )
+    st.info(
+        "Development validation: accuracy 66.93%, ROC-AUC 0.7239, failure recall 55.72%. "
+        "Historical 2009–2012 data; probabilities are uncalibrated. Location is a state/DC proxy. "
+        "Launch snapshots, duration meaning and goal currency are unverified. The reserved set "
+        "has historical exposure; these are not independent test results. "
+        "Campaign-specific benchmarks, scenarios and LLM advice are not available in this dashboard."
+    )
+else:
+    st.warning(
+        "Experimental historical estimate for demonstration. These models use 2009–2012 data "
+        "and have not been validated on present-day campaigns. Funding amounts are excluded "
+        "because source currency units are unverified. Sparse regions and unfamiliar categories "
+        "can make estimates unreliable."
+    )
+    st.caption(
+        "Enter duration, category, subcategory and listed location. Use a full country name, "
+        "such as Toronto, Canada. Mixed mode also accepts U.S. state/DC codes. "
+        "No campaign funding amount is used by either experimental model."
+    )
 
 with st.form("campaign_form"):
 
@@ -301,18 +248,20 @@ with st.form("campaign_form"):
 
         location = st.text_input(
             "Location",
-            placeholder="e.g. Austin, TX"
+            placeholder="e.g. Austin, TX" if scope is None else "e.g. Berlin, Germany"
         )
 
     with col2:
         st.markdown("#### Campaign Goals")
 
-        goal = st.number_input(
-            "Funding Goal ($)",
-            min_value=1.0,
-            value=5000.0,
-            step=500.0
-        )
+        goal = None
+        if scope is None:
+            goal = st.number_input(
+                "Funding Goal ($)",
+                min_value=1.0,
+                value=5000.0,
+                step=500.0
+            )
 
         duration = st.number_input(
             "Campaign Duration (days)",
@@ -356,7 +305,10 @@ if submitted:
         metric1, metric2 = st.columns(2)
 
         with metric1:
-            st.metric("Funding Goal", f"${goal:,.2f}")
+            if scope is None:
+                st.metric("Funding Goal", f"${goal:,.2f}")
+            else:
+                st.metric("Estimate scope", scope.capitalize())
 
         with metric2:
             st.metric("Campaign Duration", f"{duration:g} days")
@@ -371,7 +323,7 @@ if submitted:
             st.write("**Subcategory:**", subcategory)
             st.write("**Location:**", location)
 
-        # Send only the five features required by the model.
+        # The selected validator keeps only that model's approved inputs.
         campaign = {
             "goal": goal,
             "duration": duration,
@@ -386,9 +338,14 @@ if submitted:
         try:
             with st.spinner("Analyzing your campaign..."):
 
-                campaign_frame(campaign)
-                predictor = load_predictor(PRIMARY_SHA256)
-                result = predictor.predict(campaign)
+                if scope is None:
+                    campaign_frame(campaign)
+                    predictor = load_predictor(PRIMARY_SHA256)
+                    result = predictor.predict(campaign)
+                else:
+                    historical_campaign_frame(campaign, scope)
+                    predictor = load_scope_predictor(scope, MODEL_HASHES[scope])
+                    result = predict_historical(predictor, campaign, scope)
 
             probability = result["success_probability"]
             classification = result["classification"]
@@ -410,7 +367,9 @@ if submitted:
             st.markdown("#### Success Probability")
             st.progress(probability)
 
-            if classification == "successful":
+            if scope is not None:
+                st.write("Experimental classification at the displayed threshold:", classification)
+            elif classification == "successful":
                 st.success(
                     "The model predicts that this campaign "
                     "is likely to succeed."
@@ -426,13 +385,20 @@ if submitted:
                 f"{result['threshold']:.0%}"
             )
 
-            st.info(
-                "This prediction is generated using the team's "
-                "trained machine learning model and its five "
-                "approved input features. It is an estimate based "
-                "on historical campaign data, not a guarantee "
-                "of the actual campaign outcome."
-            )
+            st.info("This is a model estimate from historical data, not a guarantee of campaign outcome.")
+            if scope is not None:
+                metadata = predictor[1]
+                validation = metadata['validation_metrics']
+                st.caption(
+                    f"Experimental {scope} baseline: {metadata['training_rows']:,} training campaigns. "
+                    f"Training-only five-fold CV accuracy {validation['accuracy']:.2%}, "
+                    f"ROC-AUC {validation['roc_auc']:.4f}, "
+                    f"failure recall {validation['failure_recall']:.2%}. "
+                    f"Always-majority accuracy: {metadata['majority_class_accuracy']:.2%}. "
+                    "Different cohort scores are not a head-to-head comparison."
+                )
+                for message in result['warnings']:
+                    st.warning(message)
 
         except FileNotFoundError:
             st.error(

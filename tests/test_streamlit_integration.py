@@ -96,52 +96,26 @@ class ArtifactContractTests(unittest.TestCase):
 
 
 @unittest.skipUnless(AppTest is not None, 'Streamlit required')
-class ResearchViewTests(unittest.TestCase):
-    def test_research_views_do_not_load_or_train_models(self):
-        with patch('utils.us_prediction.load_primary_predictor') as load, \
-                patch('joblib.load') as deserialize, \
+class HistoricalViewTests(unittest.TestCase):
+    def test_experimental_forms_do_not_load_or_train_before_submit(self):
+        with patch('utils.us_prediction.load_primary_predictor') as us_load, \
+                patch('utils.historical_prediction.load_historical_predictor') as historical_load, \
                 patch('sklearn.pipeline.Pipeline.fit') as train:
             app = AppTest.from_file(str(ROOT / 'app.py')).run(timeout=30)
-            app.radio[0].set_value('International research').run(timeout=30)
-            self.assertEqual(list(app.exception), [])
-            self.assertEqual(app.metric[0].value, '1,427')
-            international = app.table[0].value
-            self.assertEqual(len(app.button), 0)
-            self.assertEqual(len(app.text_input), 0)
-
-            # The displayed results must remain traceable to the saved training-only notebook.
-            notebook = json.loads((ROOT / 'notebooks/international_only/05_modeling.ipynb').read_text())
-            output = '\n'.join(
-                ''.join(item.get('data', {}).get('text/plain', []))
-                for cell in notebook['cells'] for item in cell.get('outputs', [])
-            )
-            names = {'Random Forest': 'random_forest', 'Decision Tree': 'decision_tree',
-                     'Logistic Regression': 'logistic', 'KNN': 'knn',
-                     'HistGradientBoosting': 'hist_gradient_boosting', 'Dummy baseline': 'dummy'}
-            for _, record in international.iterrows():
-                saved = next(line.split() for line in output.splitlines()
-                             if line.split() and line.split()[0] == names[record['Model']])
-                self.assertEqual(record['Accuracy'], f'{float(saved[4]):.2%}')
-                self.assertEqual(record['ROC-AUC'], f'{float(saved[3]):.4f}')
-            self.assertTrue(any('Currency comparability' in item.value for item in app.warning))
-
-            app.radio[0].set_value('Mixed cohort research').run(timeout=30)
-            self.assertEqual(list(app.exception), [])
-            self.assertEqual(app.metric[0].value, '29,288')
-            self.assertEqual(app.table[0].value.Campaigns.sum(), 29288)
-            self.assertEqual(len(app.button), 0)
-            self.assertEqual(len(app.text_input), 0)
-            self.assertTrue(any('no approved saved mixed-cohort predictor' in item.value
-                                for item in app.warning))
-            load.assert_not_called()
-            deserialize.assert_not_called()
+            for mode in ['International (experimental)', 'Mixed (experimental)']:
+                app.radio[0].set_value(mode).run(timeout=30)
+                self.assertEqual(list(app.exception), [])
+                self.assertEqual([item.label for item in app.number_input], ['Campaign Duration (days)'])
+                self.assertEqual(len(app.text_input), 4)
+                self.assertEqual(len(app.button), 1)
+                self.assertEqual(len(app.metric), 0)
+                self.assertTrue(any('Funding amounts are excluded' in item.value for item in app.warning))
+                self.assertFalse(any('Zasha' in item.value for item in app.markdown))
+            us_load.assert_not_called()
+            historical_load.assert_not_called()
             train.assert_not_called()
-
             app.radio[0].set_value('U.S. prediction').run(timeout=30)
-            self.assertEqual(list(app.exception), [])
-            self.assertEqual(len(app.text_input), 4)
-            self.assertEqual(len(app.button), 1)
-            self.assertEqual(len(app.table), 0)
+            self.assertEqual(len(app.number_input), 2)
             self.assertEqual(len(app.metric), 0)
 
 

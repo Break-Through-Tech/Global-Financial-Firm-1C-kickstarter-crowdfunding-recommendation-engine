@@ -12,15 +12,17 @@ The current demonstration uses the frozen U.S. HistGradientBoosting v1 pipeline 
 
 These are training-only restricted nested comparison results, informed by prior tuning, on 26,945 official U.S. training campaigns. They are not independent test results. The 11,475 reserved campaigns include 1,486 IDs exposed during historical development. No new reserved evaluation was performed. Probabilities are uncalibrated; source launch snapshots, duration meaning and goal currency remain unverified. Listed state/DC is a geographic proxy. See [final selection](docs/final_model_selection.md) for complete provenance and preserved historical results.
 
-The city-frequency HGB v2 candidate (67.70% development accuracy) remains experimental. The dashboard also has international and mixed-cohort research views. These show recorded cohort evidence; campaign predictions remain U.S.-only because the other scopes lack approved saved predictors and verified currency assumptions.
+The city-frequency HGB v2 candidate (67.70% development accuracy) remains experimental and is not selected. The dashboard now also offers separate **International (experimental)** and **Mixed (experimental)** historical estimates.
 
-| Dashboard view | Available behavior |
-|---|---|
-| U.S. prediction | Frozen HGB v1 campaign probability and class |
-| International research | Saved five-fold training CV baselines for 1,427 explicit named non-U.S. training campaigns, coverage limitations and notebook links |
-| Mixed cohort research | Composition of the original 29,288-row training cohort, overlap and currency limitations, and pipeline review link |
+| Mode | Inputs used | Training rows | Development accuracy | ROC-AUC | Failure recall |
+|---|---|---:|---:|---:|---:|
+| U.S. prediction | Goal, duration, category, subcategory, state/DC proxy | 26,945 | 66.93% | 0.7239 | 55.72% |
+| International (experimental) | Duration, category, subcategory, named listed region | 1,427 | 60.41% | 0.5893 | 30.52% |
+| Mixed (experimental) | Duration, category, subcategory, listed region | 29,288 | 62.23% | 0.6631 | 50.41% |
 
-International baseline results are historical development evidence, not newly evaluated deployment models. Scores from different cohorts are not a head-to-head comparison. Research views need no datasets or model files and never load or train a predictor.
+These scores use different cohorts and procedures and are not a head-to-head comparison. The new modes use one fixed Logistic Regression baseline each, with five-fold training-only validation and no tuning. Their funding amounts are deliberately excluded because source currency units are unverified. The international baseline's accuracy is below the 60.97% always-majority baseline, so it is for demonstration, not campaign decisions.
+
+You may enter a current campaign plan, but these estimates describe patterns in 2009–2012 listed-location data. They have not been validated on contemporary campaigns or international registration markets. Mixed includes the U.S. and international subsets plus unresolved locations; it is not a disjoint third population. See [historical model details](docs/historical_scope_models.md) and [currency evidence](docs/funding_currency_review.md).
 
 ## Run the dashboard
 
@@ -33,9 +35,9 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-The runtime pins match the frozen model: scikit-learn 1.9.1, NumPy 2.5.3, pandas 3.0.5 and joblib 1.6.0, with Streamlit 1.67.0. Research notebooks use `requirements-reviewed.txt`; optional algorithm comparisons use `requirements-model-comparison.txt` when available in your checkout. The public app needs no Drive access, API keys, datasets or LLM.
+The runtime pins match the frozen model: scikit-learn 1.9.1, NumPy 2.5.3, pandas 3.0.5 and joblib 1.6.0, with Streamlit 1.67.0. Research notebooks use `requirements-reviewed.txt`; optional algorithm comparisons use `requirements-model-comparison.txt` when available in your checkout. The public app needs no Drive access, API keys, datasets or LLM. All model fitting happens offline.
 
-Both `models/us_primary_model_v1.joblib` and its sibling `us_primary_model_v1.metadata.json` are tracked on `fix/streamlit-model-integration`, so a checkout of this branch supplies the required files. The loader checks the model hash, metadata identity, threshold, input order, runtime, class order and pipeline structure before serving results. Missing or incompatible artifacts make prediction unavailable; startup never retrains.
+U.S. prediction requires `models/us_primary_model_v1.joblib` and its sibling `us_primary_model_v1.metadata.json`. The additional modes require `international_historical_v1.joblib` and `mixed_historical_v1.joblib`, each with matching `.metadata.json`, in the same folder. The four new files are prepared locally for team review; they are not committed or published by this change. A deployment needs all approved files present in its GitHub checkout or trusted artifact source. The loader checks the model hash, metadata identity, threshold, input order, runtime, class order and pipeline structure before serving results. Missing or incompatible artifacts make prediction unavailable; startup never retrains.
 
 Frozen SHA-256:
 
@@ -43,7 +45,7 @@ Frozen SHA-256:
 243bb0d53ac7b456e6b636c424bc8d0d74dbd67f014d5f8f175b7d4226bd94b6
 ```
 
-Enter positive finite goals/durations, exact category names such as Music / Rock, and `TX` or `Austin, TX`. Fractional durations remain supported. Unseen category/subcategory strings use fitted training fallbacks; pairs are not validated. The app shows only the model estimate and its limitations.
+Enter positive finite goals/durations, exact category names such as Music / Rock, and `TX` or `Austin, TX`. Fractional durations remain supported. Unseen category/subcategory strings use fitted training fallbacks; pairs are not validated. The U.S. app shows the model estimate and its limitations. For International, use an explicit named location such as `Berlin, Germany`; Mixed also accepts U.S. state/DC locations. Neither experimental form asks for a funding goal. Unseen groups use fitted encoding fallbacks with support warnings.
 
 ## Deploy through the Streamlit website
 
@@ -63,6 +65,8 @@ Deployment is planned through [Streamlit Community Cloud](https://share.streamli
 | Dependencies | Root `requirements.txt`, installed automatically |
 
 For the deployment check, enter category `Music`, subcategory `Rock`, location `Austin, TX`, funding goal `5000`, and duration `30`. The displayed success probability should be **59.75%**, with outcome **Successful**. The campaign name is optional. This checks the frozen model integration; it is not a new evaluation result.
+
+For an experimental smoke test, select International or Mixed and enter Music / Rock, Berlin, Germany, duration 30. Expected success probabilities are 75.30% and 75.58%, respectively. These are model-consistency checks, not evidence of current predictive accuracy.
 
 The app has been tested locally; a public deployment and Linux host build have not yet been verified. See [the integration and deployment handoff](docs/streamlit_integration_handoff.md) for the audit and troubleshooting details. If you later deploy from `main`, first merge the reviewed fixes and confirm that both the model and metadata are present there.
 
