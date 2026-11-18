@@ -31,6 +31,15 @@ def load_predictor(model_hash):
 
 st.markdown("""
 <style>
+    .stApp,
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p,
+    .stApp input, .stApp textarea, .stApp button, .stApp label,
+    .stApp [data-testid="stMarkdownContainer"],
+    .stApp [data-testid="stMetric"],
+    .stApp [data-testid="stMetricValue"] > div {
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
     .stApp {
         background-color: #F5F7FB;
     }
@@ -44,23 +53,25 @@ st.markdown("""
     }
 
     .main-title {
-        font-size: 2.3rem;
-        font-weight: 750;
+        font-size: 2rem;
+        font-weight: 600;
         color: #14213D;
-        letter-spacing: -1px;
+        letter-spacing: normal;
+        line-height: 1.25;
         margin-bottom: 5px;
     }
 
     .subtitle {
         color: #64748B;
         font-size: 1rem;
+        line-height: 1.5;
         margin-bottom: 25px;
     }
 
     .section-title {
         color: #14213D;
-        font-size: 1.35rem;
-        font-weight: 650;
+        font-size: 1.25rem;
+        font-weight: 600;
         margin-bottom: 12px;
     }
 
@@ -104,6 +115,11 @@ st.markdown("""
         color: #14213D;
     }
 
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
+        font-weight: 600;
+        letter-spacing: normal;
+    }
+
     footer {
         visibility: hidden;
     }
@@ -116,18 +132,18 @@ st.markdown("""
 # --------------------------------------------------
 
 with st.sidebar:
-    st.markdown("# 🚀 Kickstarter")
+    st.markdown("# Kickstarter")
     st.markdown("### Campaign Advisor")
 
     st.divider()
 
-    st.markdown("**AVAILABLE MODE**")
+    st.markdown("**Available mode**")
     st.markdown("U.S. campaign predictor: HGB v1")
     st.caption("International and mixed modes are unavailable pending validation.")
 
     st.divider()
 
-    st.markdown("**PROJECT INFORMATION**")
+    st.markdown("**Project information**")
     st.caption("Team 1C")
     st.caption("Break Through Tech AI Studio")
     st.caption("Fall 2026")
@@ -234,7 +250,7 @@ with st.form("campaign_form"):
     st.markdown("---")
 
     submitted = st.form_submit_button(
-        "Analyze My Campaign →",
+        "Analyze campaign",
         type="primary",
         use_container_width=True
     )
