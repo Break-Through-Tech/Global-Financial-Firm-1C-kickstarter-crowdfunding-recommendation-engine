@@ -67,6 +67,33 @@ class ArtifactContractTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 load_primary_predictor(path)
 
+    @unittest.skipUnless(MODEL.exists() and MODEL.with_suffix('.metadata.json').exists(),
+                         'Frozen artifact and metadata not supplied')
+    def test_python_312_patch_versions_allowed(self):
+        for version in ['3.12.3', '3.12.12']:
+            with self.subTest(version=version), patch(
+                    'utils.us_prediction.platform.python_version', return_value=version):
+                predictor = load_primary_predictor(MODEL)
+                self.assertEqual(predictor.threshold, .5)
+
+    @unittest.skipUnless(MODEL.exists() and MODEL.with_suffix('.metadata.json').exists(),
+                         'Frozen artifact and metadata not supplied')
+    def test_python_error_shows_actual_and_required_before_loading(self):
+        with patch('utils.us_prediction.platform.python_version', return_value='3.13.9'), \
+                patch('utils.us_prediction.joblib.load') as load:
+            with self.assertRaisesRegex(ValueError, 'running Python 3.13.9;.*requires Python 3.12'):
+                load_primary_predictor(MODEL)
+            load.assert_not_called()
+
+    @unittest.skipUnless(MODEL.exists() and MODEL.with_suffix('.metadata.json').exists(),
+                         'Frozen artifact and metadata not supplied')
+    def test_library_error_shows_versions(self):
+        with patch('utils.us_prediction.sklearn.__version__', '0.0'), \
+                patch('utils.us_prediction.joblib.load') as load:
+            with self.assertRaisesRegex(ValueError, 'server has sklearn 0.0;.*requires 1.9.1'):
+                load_primary_predictor(MODEL)
+            load.assert_not_called()
+
 
 @unittest.skipUnless(AppTest is not None and MODEL.exists()
                      and MODEL.with_suffix('.metadata.json').exists(),
