@@ -1,0 +1,15 @@
+{
+  "scope": "international",
+  "training_rows": 1427,
+  "ordered_training_ids_sha256": "5bc2a72f22d3ca2018cf1bee8997b497f65697f22425cb7540f48d288d6dd040",
+  "inputs": [
+    "duration",
+    "category",
+    "subcategory",
+    "country_region"
+  ],
+  "class_counts": {
+    "0": 557,
+    "1": 870
+  }
+}
