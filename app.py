@@ -136,9 +136,8 @@ with st.sidebar:
 
     st.divider()
 
-    st.markdown("**Available mode**")
-    st.markdown("U.S. campaign predictor: HGB v1")
-    st.caption("International and mixed modes are unavailable pending validation.")
+    mode = st.radio("View", ["U.S. prediction", "International research", "Mixed cohort research"])
+    st.caption("U.S. predictions use HGB v1. Research views show recorded cohort evidence.")
 
     st.divider()
 
@@ -174,6 +173,82 @@ st.markdown(
 
 st.divider()
 
+if mode != "U.S. prediction":
+    st.subheader(mode)
+    st.info(
+        "Historical research summary. This view does not generate a campaign prediction. "
+        "Each cohort has different coverage and evaluation; scores are not a head-to-head comparison."
+    )
+
+    if mode == "International research":
+        st.write(
+            "This cohort includes explicit named non-U.S. locations, such as Berlin, Germany "
+            "or Toronto, Canada. Unknown locations and U.S. territories are excluded. "
+            "Listed location does not establish campaign registration country."
+        )
+        st.metric("Official training campaigns", "1,427")
+        st.markdown("#### Recorded training-validation results")
+        st.caption(
+            "Five-fold stratified training CV with fold-fitted conservative features and one-hot encoding. "
+            "These are saved baseline results, not a newly evaluated or deployed international model."
+        )
+        st.table([
+            {"Model": "Random Forest", "Accuracy": "65.73%", "ROC-AUC": "0.6685"},
+            {"Model": "Decision Tree", "Accuracy": "65.03%", "ROC-AUC": "0.6584"},
+            {"Model": "Logistic Regression", "Accuracy": "64.19%", "ROC-AUC": "0.6573"},
+            {"Model": "KNN", "Accuracy": "65.03%", "ROC-AUC": "0.6510"},
+            {"Model": "HistGradientBoosting", "Accuracy": "61.60%", "ROC-AUC": "0.6405"},
+            {"Model": "Dummy baseline", "Accuracy": "60.97%", "ROC-AUC": "0.5000"},
+        ])
+        st.warning(
+            "Coverage is sparse: 113 of 125 training regions have fewer than 25 campaigns. "
+            "Currency comparability remains unresolved, including within-country fallbacks. "
+            "The reserved cohort has historical exposure. No independent test result is shown."
+        )
+        st.markdown(
+            "[Baseline notebook](https://github.com/Break-Through-Tech/"
+            "Global-Financial-Firm-1C-kickstarter-crowdfunding-recommendation-engine/"
+            "blob/main/notebooks/international_only/05_modeling.ipynb) · "
+            "[Cohort documentation](https://github.com/Break-Through-Tech/"
+            "Global-Financial-Firm-1C-kickstarter-crowdfunding-recommendation-engine/"
+            "blob/main/docs/international_only_workflow.md)"
+        )
+    else:
+        st.write(
+            "The mixed cohort is the original combined dataset. It includes the U.S. subset, "
+            "named non-U.S. locations, and other or unresolved locations. "
+            "It is not a separate population from the U.S. or international cohorts."
+        )
+        st.metric("Official training campaigns", "29,288")
+        st.table([
+            {"Training subset": "U.S. state/DC proxy", "Campaigns": 26945},
+            {"Training subset": "Explicit named non-U.S.", "Campaigns": 1427},
+            {"Training subset": "Other or unresolved locations", "Campaigns": 916},
+        ])
+        st.warning(
+            "There is no approved saved mixed-cohort predictor. Global funding-goal currency "
+            "units remain unverified. Earlier combined model scores used different feature "
+            "policies and preprocessing, so they are not presented as deployable performance."
+        )
+        st.write(
+            "Zasha's online workflow is a separate CatBoost research pipeline. It requires "
+            "title, rewards and launch information in addition to the five U.S. inputs, "
+            "and does not establish a validated mixed-cohort model."
+        )
+        st.markdown(
+            "[Cohort and pipeline review](https://github.com/Break-Through-Tech/"
+            "Global-Financial-Firm-1C-kickstarter-crowdfunding-recommendation-engine/"
+            "blob/main/docs/launch_pipeline_review.md)"
+        )
+
+    st.caption(
+        "Enabling predictions requires a separately saved and evaluated pipeline, "
+        "verified funding units, supported input rules, and model integrity metadata. "
+        "No model is trained or loaded by these research views."
+    )
+    st.caption("Kickstarter Campaign Advisor | Team 1C")
+    st.stop()
+
 
 # --------------------------------------------------
 # CAMPAIGN INPUT SECTION
@@ -199,7 +274,7 @@ st.info(
     "Historical 2009–2012 data; probabilities are uncalibrated. Location is a state/DC proxy. "
     "Launch snapshots, duration meaning and goal currency are unverified. The reserved set "
     "has historical exposure; these are not independent test results. "
-    "Historical comparisons, scenarios and LLM advice are not available in this dashboard."
+    "Campaign-specific benchmarks, scenarios and LLM advice are not available in this dashboard."
 )
 
 with st.form("campaign_form"):

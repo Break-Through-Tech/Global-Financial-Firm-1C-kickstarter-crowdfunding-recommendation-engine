@@ -1,6 +1,10 @@
 # Model selector proposal for Zasha
 
-Documentation only. No Streamlit source or existing prediction helper is changed.
+The model contract below remains the boundary for enabling predictions. Streamlit now has a sidebar selector for U.S. prediction, international research and mixed-cohort research. The two research views show recorded training-only evidence and limitations; they never load a model, train, or return a campaign probability.
+
+International results are copied from the saved outputs of `notebooks/international_only/05_modeling.ipynb`: five-fold stratified CV, 1,427 official training rows, conservative features with fold-fitted one-hot preprocessing. They are not a separately serialized predictor or independent evaluation. Mixed-cohort counts come from `docs/workflow_audit_remediation_2026-10-15.md` and `docs/launch_pipeline_review.md`: 29,288 total training rows, including 26,945 U.S., 1,427 named non-U.S., and 916 other or unresolved locations. Mixed includes both derivative cohorts. No historical combined score is presented as deployable performance.
+
+Switching back to U.S. prediction restores the existing five-input form and frozen HGB v1 interface. New international/mixed probabilities still require approved, separately evaluated artifacts, verified monetary units, scope/input validation and integrity metadata. The research views do not activate Zasha's experimental online trainer.
 
 | Contract | U.S. primary | Global exploratory |
 |---|---|---|

@@ -12,7 +12,15 @@ The current demonstration uses the frozen U.S. HistGradientBoosting v1 pipeline 
 
 These are training-only restricted nested comparison results, informed by prior tuning, on 26,945 official U.S. training campaigns. They are not independent test results. The 11,475 reserved campaigns include 1,486 IDs exposed during historical development. No new reserved evaluation was performed. Probabilities are uncalibrated; source launch snapshots, duration meaning and goal currency remain unverified. Listed state/DC is a geographic proxy. See [final selection](docs/final_model_selection.md) for complete provenance and preserved historical results.
 
-The city-frequency HGB v2 candidate (67.70% development accuracy) remains experimental. International and mixed models are unavailable in the dashboard because input, currency and separate evaluation requirements are unresolved.
+The city-frequency HGB v2 candidate (67.70% development accuracy) remains experimental. The dashboard also has international and mixed-cohort research views. These show recorded cohort evidence; campaign predictions remain U.S.-only because the other scopes lack approved saved predictors and verified currency assumptions.
+
+| Dashboard view | Available behavior |
+|---|---|
+| U.S. prediction | Frozen HGB v1 campaign probability and class |
+| International research | Saved five-fold training CV baselines for 1,427 explicit named non-U.S. training campaigns, coverage limitations and notebook links |
+| Mixed cohort research | Composition of the original 29,288-row training cohort, overlap and currency limitations, and pipeline review link |
+
+International baseline results are historical development evidence, not newly evaluated deployment models. Scores from different cohorts are not a head-to-head comparison. Research views need no datasets or model files and never load or train a predictor.
 
 ## Run the dashboard
 
