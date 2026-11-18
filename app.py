@@ -41,50 +41,49 @@ st.markdown("""
     }
 
     .stApp {
-        background-color: #F5F7FB;
+        background-color: var(--background-color, #111827);
+        color: var(--text-color, #F3F4F6);
     }
 
     [data-testid="stSidebar"] {
-        background-color: #101C35;
-    }
-
-    [data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
+        background-color: var(--secondary-background-color, #1F2937);
     }
 
     .main-title {
         font-size: 2rem;
         font-weight: 600;
-        color: #14213D;
+        color: var(--text-color, #F3F4F6);
         letter-spacing: normal;
         line-height: 1.25;
         margin-bottom: 5px;
     }
 
     .subtitle {
-        color: #64748B;
+        color: var(--text-color, #F3F4F6);
+        opacity: 0.8;
         font-size: 1rem;
         line-height: 1.5;
         margin-bottom: 25px;
     }
 
     .section-title {
-        color: #14213D;
+        color: var(--text-color, #F3F4F6);
         font-size: 1.25rem;
         font-weight: 600;
         margin-bottom: 12px;
     }
 
     .info-card {
-        background-color: white;
+        background-color: var(--secondary-background-color, #1F2937);
         padding: 22px;
         border-radius: 12px;
-        border: 1px solid #E2E8F0;
+        border: 1px solid rgba(148, 163, 184, 0.3);
         margin-bottom: 15px;
     }
 
     .small-label {
-        color: #64748B;
+        color: var(--text-color, #F3F4F6);
+        opacity: 0.8;
         font-size: 0.85rem;
     }
 
@@ -105,14 +104,14 @@ st.markdown("""
     }
 
     [data-testid="stForm"] {
-        background-color: white;
+        background-color: var(--secondary-background-color, #1F2937);
         padding: 24px;
-        border: 1px solid #E2E8F0;
+        border: 1px solid rgba(148, 163, 184, 0.3);
         border-radius: 12px;
     }
 
     h1, h2, h3 {
-        color: #14213D;
+        color: var(--text-color, #F3F4F6);
     }
 
     .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
