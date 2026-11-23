@@ -1,7 +1,14 @@
 
-import streamlit as st
+import os
+import time
+from datetime import date
 from pathlib import Path
-from utils.us_prediction import load_primary_predictor, campaign_frame, PRIMARY_SHA256
+
+import streamlit as st
+from dotenv import dotenv_values
+from models.train_and_predict import load_model, predict_campaign, save_model, train_online_model
+from utils.campaign_interpretation import (DEFAULT_GEMINI_MODEL, build_llm, explain_prediction,
+                                           interpretation_messages, stream_interpretation)
 from utils.historical_prediction import (MODEL_HASHES, historical_campaign_frame,
                                          load_historical_predictor, predict_historical)
 
@@ -20,11 +27,66 @@ st.set_page_config(
 # LOAD TRAINED MODEL
 # --------------------------------------------------
 
-MODEL_PATH = Path(__file__).parent / "models" / "us_primary_model_v1.joblib"
+ONLINE_MODEL_PATH = Path(__file__).parent / "models" / "trained_models" / "online_us_catboostclassifier.pkl"
+SUCCESS_THRESHOLD = 0.5
+ENV_FILE = Path(__file__).parent / ".env"
+
+
+@st.cache_resource(show_spinner="Loading the CatBoost model...")
+def load_online_predictor():
+    try:
+        return load_model(ONLINE_MODEL_PATH)
+    except FileNotFoundError:
+        pass
+    except Exception as error:
+        st.warning(f"Saved model could not be loaded ({type(error).__name__}), retraining it now.")
+
+    pipeline = train_online_model(scope="us")
+    save_model(pipeline, ONLINE_MODEL_PATH)
+    return pipeline
+
+
+def read_setting(name, default=None):
+    return dotenv_values(ENV_FILE).get(name) or os.environ.get(name) or default
+
 
 @st.cache_resource
-def load_predictor(model_hash):
-    return load_primary_predictor(MODEL_PATH)
+def load_llm(api_key, model_name):
+    return build_llm(api_key, model_name)
+
+
+def show_ai_interpretation(campaign, probability, threshold, drivers=None, scope_note=None):
+    st.divider()
+    st.markdown("### AI Interpretation")
+
+    api_key = read_setting("API_KEY")
+    if not api_key:
+        st.info("Add your Gemini key as API_KEY in the .env file to see an AI interpretation here.")
+        return
+
+    model_name = read_setting("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+    messages = interpretation_messages(campaign, probability, threshold, drivers, scope_note)
+
+    try:
+        write_interpretation(load_llm(api_key, model_name), messages)
+        st.caption(f"Written by {model_name} from the prediction and feature importance above. "
+                   "Treat it as a starting point, not advice.")
+    except Exception as error:
+        st.warning(f"The AI interpretation is unavailable right now ({type(error).__name__}: {error}).")
+
+
+def write_interpretation(llm, messages, attempts=3):
+    answer_box = st.empty()
+    for attempt in range(1, attempts + 1):
+        try:
+            with answer_box.container(border=True):
+                st.write_stream(stream_interpretation(llm, messages))
+            return
+        except Exception:
+            answer_box.empty()
+            if attempt == attempts:
+                raise
+            time.sleep(2 * attempt)
 
 
 @st.cache_resource
@@ -201,15 +263,13 @@ st.write(
 if scope is None:
     st.caption(
         "Use exact training category names, such as Music / Rock or Art / Painting. "
-        "Unseen category and subcategory values use training-fitted fallbacks; "
-        "category pairs are not validated. Location accepts ST or City, ST."
+        "Unseen categories fall back to an 'other' bucket. Location accepts ST or City, ST. "
+        "Reward levels are dollar amounts separated by commas, such as $10,$25,$100."
     )
     st.info(
-        "Development validation: accuracy 66.93%, ROC-AUC 0.7239, failure recall 55.72%. "
-        "Historical 2009–2012 data; probabilities are uncalibrated. Location is a state/DC proxy. "
-        "Launch snapshots, duration meaning and goal currency are unverified. The reserved set "
-        "has historical exposure; these are not independent test results. "
-        "Campaign-specific benchmarks, scenarios and LLM advice are not available in this dashboard."
+        "CatBoost model on 2009–2012 U.S. campaigns. On a held-out 20% of campaigns it scored "
+        "about 70.4% accuracy and 0.766 ROC-AUC. Probabilities are uncalibrated and the "
+        "AI interpretation is generated from the model's own feature importance."
     )
 else:
     st.warning(
@@ -232,7 +292,7 @@ with st.form("campaign_form"):
         st.markdown("#### Basic Details")
 
         name = st.text_input(
-            "Campaign Name (optional, not used by model)",
+            "Campaign Name" if scope is None else "Campaign Name (optional, not used by model)",
             placeholder="e.g. Independent Music Album"
         )
 
@@ -269,6 +329,15 @@ with st.form("campaign_form"):
             value=30.0,
             step=1.0
         )
+
+        reward_levels = ""
+        launch_date = date.today()
+        if scope is None:
+            reward_levels = st.text_input(
+                "Reward Levels",
+                placeholder="e.g. $10,$25,$100,$500"
+            )
+            launch_date = st.date_input("Launch Date", value=date.today())
 
     st.markdown("---")
 
@@ -325,12 +394,17 @@ if submitted:
 
         # The selected validator keeps only that model's approved inputs.
         campaign = {
+            "name": name.strip(),
             "goal": goal,
             "duration": duration,
             "category": category.strip(),
             "subcategory": subcategory.strip(),
-            "location": location.strip()
+            "location": location.strip(),
+            "reward levels": reward_levels.strip(),
+            "launch": launch_date.isoformat() if scope is None else None,
         }
+        drivers = None
+        scope_note = None
 
         st.divider()
         st.markdown("### Campaign Success Prediction")
@@ -339,9 +413,14 @@ if submitted:
             with st.spinner("Analyzing your campaign..."):
 
                 if scope is None:
-                    campaign_frame(campaign)
-                    predictor = load_predictor(PRIMARY_SHA256)
-                    result = predictor.predict(campaign)
+                    online_predictor = load_online_predictor()
+                    probability = float(predict_campaign(online_predictor, campaign)[0])
+                    result = {
+                        "success_probability": probability,
+                        "classification": "successful" if probability >= SUCCESS_THRESHOLD else "failed",
+                        "threshold": SUCCESS_THRESHOLD,
+                    }
+                    drivers = explain_prediction(online_predictor, campaign)
                 else:
                     historical_campaign_frame(campaign, scope)
                     predictor = load_scope_predictor(scope, MODEL_HASHES[scope])
@@ -399,6 +478,22 @@ if submitted:
                 )
                 for message in result['warnings']:
                     st.warning(message)
+                scope_note = (f"This estimate comes from an experimental {scope} baseline model "
+                              f"with {validation['accuracy']:.0%} cross-validated accuracy, "
+                              "not the U.S. CatBoost model, and it ignores the funding goal.")
+
+            if drivers is not None:
+                st.markdown("#### What Moved This Prediction")
+                top_drivers = drivers.head(8)
+                st.bar_chart(top_drivers, x="label", y="push", horizontal=True, sort=False,
+                             x_label="", y_label="Push toward success (+) or failure (-)")
+                st.dataframe(
+                    top_drivers[["label", "value", "push", "overall_importance"]].rename(columns={
+                        "label": "Feature", "value": "Your campaign", "push": "Push",
+                        "overall_importance": "Overall importance (%)"}),
+                    hide_index=True, width="stretch")
+
+            show_ai_interpretation(campaign, probability, result["threshold"], drivers, scope_note)
 
         except FileNotFoundError:
             st.error(
