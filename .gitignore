@@ -44,3 +44,4 @@ test-run/
 !models/mixed_historical_v1.joblib
 !models/mixed_historical_v1.metadata.json
 .venv-dashboard/
+!models/trained_models/online_us_catboostclassifier.pkl
