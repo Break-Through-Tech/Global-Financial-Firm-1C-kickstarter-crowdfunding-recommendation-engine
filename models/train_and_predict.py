@@ -1,4 +1,5 @@
 
+import html
 import sys
 import warnings
 from pathlib import Path
@@ -14,12 +15,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from modeling import load, parse_tiers
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utils.features import parse_tiers
 from utils.us_scope import state_suffix, us_state_proxy_mask  # noqa: E402
 from catboost import CatBoostClassifier
-from utils.get_google_drive_data import load_csv_from_drive
-from utils.google_drive_client import get_drive_client
 
 RAW_COLUMNS = ["name", "category", "subcategory", "location", "goal", "duration",
                "reward levels", "launch"]
@@ -141,14 +140,59 @@ def make_online_pipeline(scope="us", model="boosting"):
         ("model", clf),
     ])
 
+LOCAL_CSV = (Path(__file__).resolve().parents[1]
+             / "data" / "Raw-data" / "DSI_kickstarterscrape_dataset.csv")
+
+
+def load_local_training_data(path=None):
+    """Read and clean the raw CSV from disk (same cleaning as clean_raw_data)."""
+    path = Path(path) if path else LOCAL_CSV
+    if not path.exists():
+        raise FileNotFoundError(f"Local training CSV not found: {path}")
+
+    df = pd.read_csv(path, encoding="utf-8", encoding_errors="replace")
+    for c in ["name", "category", "subcategory"]:
+        df[c] = df[c].astype(str).map(html.unescape)
+
+    df = df.drop_duplicates(subset="project id", keep="first")
+    df["end"] = pd.to_datetime(df["funded date"], format="mixed", utc=True)
+    df["launch"] = df["end"] - pd.to_timedelta(df["duration"], unit="D")
+
+    df = df[df["status"].isin(["successful", "failed"])].copy()
+    df["success"] = df["status"].eq("successful")
+    return df[(df["goal"] > 0) & (df["duration"] > 0)
+              & df["funded percentage"].notna()].reset_index(drop=True)
+
+
+def load_training_data(source="auto", path=None):
+    """
+    source: "drive" (Google Drive only), "local" (CSV only), or
+            "auto" (try Drive, fall back to the local CSV if it is unavailable).
+    """
+    if source not in ("auto", "drive", "local"):
+        raise ValueError("source must be 'auto', 'drive' or 'local'")
+
+    if source != "local":
+        try:
+            from utils.get_google_drive_data import load_csv_from_drive
+            from utils.google_drive_client import get_drive_client
+            return load_csv_from_drive(get_drive_client(), clean=True)
+        except Exception as exc:
+            if source == "drive":
+                raise
+            warnings.warn(f"Google Drive unavailable ({type(exc).__name__}: {exc}); "
+                          f"using local CSV {LOCAL_CSV.name}")
+
+    return load_local_training_data(path)
+
+
 def train_online_model(
         scope="mixed",
         df=None,
         train_mask=None,
     ):
     if df is None:
-        service = get_drive_client()
-        df = load_csv_from_drive(service, clean=True)
+        df = load_training_data()
 
     mask = scope_mask(df, scope)
 
